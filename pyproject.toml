@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "gslide2media"
+version = "0.0.50"
+description = "A tool to convert google slides presentations into SVG, PNG, JPEG, or MP4"
+authors = ["David Midlo <dmidlo@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+[tool.poetry.dev-dependencies]
+pytest = "*"
+
+[tool.poetry.scripts]
+gslide2media = "gslide2media.__main__:main"

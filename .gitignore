@@ -1,0 +1,8 @@
+.DS_store
+venv/
+client_secret*.json
+token.json
+presentations/
+__pycache__/
+*.egg-info/
+dist/
