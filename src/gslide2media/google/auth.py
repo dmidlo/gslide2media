@@ -67,7 +67,7 @@ class AuthGoogle:
             self.creds, credentials_file, api_scopes
         )
         self.creds = self.refresh_google_auth_creds(self.creds)  # needs to be twice.
-        
+
         self.save_token_file_to_disk(self.creds, token_file)
 
         self.slides_service: Resource = self.create_slides_service()

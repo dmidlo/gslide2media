@@ -7,9 +7,15 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-
-[tool.poetry.dev-dependencies]
-pytest = "*"
+google-api-python-client = "*"
+google-auth-oauthlib = "^1.0.0"
+cairosvg = "^2.7.0"
+imageio = "^2.27.0"
 
 [tool.poetry.scripts]
 gslide2media = "gslide2media.__main__:main"
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
+mypy = "^1.2.0"
+black = "^23.3.0"
+

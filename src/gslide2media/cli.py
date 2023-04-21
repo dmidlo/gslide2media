@@ -215,6 +215,8 @@ class ArgParser(argparse.ArgumentParser):
         return args
 
     def _sanitize_input(self):
+        self._check_should_print_help()
+
         self.check_allow_only_presentation_or_folder_not_both(
             self.arg_namespace.folder_id, self.arg_namespace.presentation_id
         )
@@ -433,10 +435,36 @@ class ArgParser(argparse.ArgumentParser):
         return string
 
     def _fix_path_strings(self):
-        self.arg_namespace.download_directory = Path(
-            self.arg_namespace.download_directory
+        self.arg_namespace.download_directory = (
+            Path(self.arg_namespace.download_directory)
+            if self.arg_namespace.download_directory
+            else Path(Path(".").resolve())
         )
-        self.arg_namespace.credentials_file = Path(self.arg_namespace.credentials_file)
+
+        print(self.arg_namespace.credentials_file)
+        print(self.arg_namespace.credentials_pattern)
+
+
+        print(self.arg_namespace.download_directory.glob(self.arg_namespace.credentials_pattern))
+
+        try:
+            self.arg_namespace.credentials_file = (
+                Path(self.arg_namespace.credentials_file)
+                if self.arg_namespace.credentials_file
+                else next(
+                    self.arg_namespace.download_directory.glob(
+                        self.arg_namespace.credentials_pattern
+                    )
+                )
+            )
+        except StopIteration as err:
+            raise ValueError((
+                "credentials json file not found that matches the pattern in the directory provided."
+                f"  pattern: {self.arg_namespace.credentials_pattern}"
+                f"  directory: {self.arg_namespace.download_directory}"
+            )) from err
+
+
         self.arg_namespace.token_file = Path(self.arg_namespace.token_file)
 
         if self.arg_namespace.credentials_file.is_dir():

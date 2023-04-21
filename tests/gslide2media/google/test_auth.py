@@ -10,10 +10,11 @@ from gslide2media.options import Options
 
 
 @pytest.fixture(
-    params=[Path("token.json"), "/Users/davidmidlo/projects/gslide2jpeg/token.json"]
+    params=[Path("token.json"), "/Users/davidmidlo/projects/gslide2media/token.json"]
 )
 def token_file(request):
     return request.param
+
 
 @pytest.fixture()
 def default_options():
@@ -48,15 +49,21 @@ def test_refresh_google_auth_creds(creds_from_token_file):
         assert refreshed_creds.valid
         assert not refreshed_creds.expired
 
+
 @pytest.mark.parametrize(
     "options_set, options_obj",
     [
         ("None", None),
-        ("from_file", AuthGoogle.load_google_auth_creds_from_file(Path("token.json"), API_SCOPES))
+        (
+            "from_file",
+            AuthGoogle.load_google_auth_creds_from_file(Path("token.json"), API_SCOPES),
+        ),
     ],
 )
 def test_initiate_google_oauth_flow(options_set, options_obj, default_options):
-    obtained_creds = AuthGoogle.initiate_google_oauth_flow(options_obj, default_options.credentials_file, API_SCOPES)
+    obtained_creds = AuthGoogle.initiate_google_oauth_flow(
+        options_obj, default_options.credentials_file, API_SCOPES
+    )
 
     assert isinstance(obtained_creds, Credentials)
 
