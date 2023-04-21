@@ -54,4 +54,4 @@ https://console.cloud.google.com/apis/credentials/oauthclient?project=gslide2med
     - https://console.cloud.google.com/apis/credentials?project=gslide2media
     - __*Under OAuth 2.0 Client IDs*__
         - Click on the __Download icon__ (the bold down arrow on the right end of the row)
-        - Click on `Download JSON`, save the file in your project's working/download directory.
+        - Click on `Download JSON`, save the file in your project's working/download directory or specify its path with options.download_directory or --download-directory {Path[str]}

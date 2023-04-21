@@ -461,7 +461,10 @@ class ArgParser(argparse.ArgumentParser):
             raise ValueError((
                 "credentials json file not found that matches the pattern in the directory provided."
                 f"  pattern: {self.arg_namespace.credentials_pattern}"
-                f"  directory: {self.arg_namespace.download_directory}"
+                f"  directory: {self.arg_namespace.download_directory}\n"
+                "Follow the instructions for creating a Google API project and creating a client"
+                "_secret*.json at:\n"
+                "  https://github.com/dmidlo/gslide2media/blob/main/GoogleAPIConfig.md"
             )) from err
 
 
