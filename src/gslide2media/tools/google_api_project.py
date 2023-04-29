@@ -799,13 +799,14 @@ class ManualSteps(OrderedDict):
         :return: The path to the selected file.
         :rtype: str
         """
+
+        print("\n\n**For security purposes, the client secret file will be deleted once it has been imported.**\n")
         path_str = inquirer.filepath(
             message="Enter path to your google client secret json file to import:",
             default=str(Path().resolve()),
             validate=PathValidator(is_file=True, message="Input is not a file"),
             only_files=True,
         ).execute()
-        Path(path_str).unlink()
         return path_str
 
 

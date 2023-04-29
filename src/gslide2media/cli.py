@@ -380,6 +380,7 @@ class ArgParser(argparse.ArgumentParser):
                         self.arg_namespace.tool_auth_google_api_project = True
                         client_secret_path = GoogleApiProject()()
                         config.META.import_google_client_secret_json(client_secret_path)
+                        Path(client_secret_path).unlink()
                     elif sys.argv[2] == "google-token":
                         self.arg_namespace.tool_google_auth_token = True
                     raise SystemExit
