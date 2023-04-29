@@ -7,9 +7,14 @@ Returns:
 # sourcery skip: hoist-statement-from-if, introduce-default-else
 from typing import Generator
 
+from pathlib import Path
+
 from gslide2media.cli import ArgParser
 from gslide2media.google import GoogleClient
 from gslide2media.options import Options
+
+from gslide2media import config
+from gslide2media.meta import Metadata
 
 
 class ToMedia:
@@ -39,20 +44,24 @@ class ToMedia:
     """
 
     def __init__(self, options: Options) -> None:
+        config.META = Metadata.metadata_singleton_factory()
         self.ARGS = ArgParser(options)()
+        print(config.META)
+        print(self.ARGS)
+        raise SystemExit
+        self.GOOGLE = GoogleClient(self.ARGS)
 
-        self.google = GoogleClient(self.ARGS)
 
         if self.ARGS.presentation_id:
             self.presentations_in_google_folder = None
-            self.presentation = self.google.convert_presentation(
+            self.presentation = self.GOOGLE.convert_presentation(
                 self.ARGS.presentation_id
             )
         elif self.ARGS.folder_id:
-            self.presentation = None
             self.presentations_in_google_folder = (
-                self.google.convert_presentations_in_google_folder()
+                self.GOOGLE.convert_presentations_in_google_folder()
             )
+            self.presentation = None
 
     def __call__(self) -> None | Generator:
         if not self.ARGS.download_directory.exists():
@@ -100,7 +109,7 @@ class ToMedia:
         del self._ARGS
 
     @property
-    def google(self):
+    def GOOGLE(self):
         """
         Get the GoogleClient instance used for authentication and interacting with the Google API.
 
@@ -109,8 +118,8 @@ class ToMedia:
         """
         return self._google
 
-    @google.setter
-    def google(self, google):
+    @GOOGLE.setter
+    def GOOGLE(self, google):
         """
         Set the GoogleClient instance used for authentication and interacting with the Google API.
 
@@ -122,8 +131,8 @@ class ToMedia:
         """
         self._google = google
 
-    @google.deleter
-    def google(self):
+    @GOOGLE.deleter
+    def GOOGLE(self):
         """
         Delete GoogleClient instance used for authentication and interacting with the Google API.
         """
@@ -205,7 +214,8 @@ class ToMedia:
 def main(options: Options | None = None) -> Generator | None:
     if not options:
         options = Options()
-        ToMedia(options)()
+        for _ in ToMedia(options)():
+            ...
         return None
     options.from_api = True
     return ToMedia(options)()

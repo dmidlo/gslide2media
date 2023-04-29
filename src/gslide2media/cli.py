@@ -5,15 +5,26 @@ import argparse
 from pathlib import Path
 
 from gslide2media.options import Options
+from gslide2media.google.auth import AuthGoogle
+from gslide2media.config import API_SCOPES
+from gslide2media.tools.google_api_project import GoogleApiProject
+from gslide2media import config
 
 default_options = Options()
 
 
 class ArgParser(argparse.ArgumentParser):
-    def __init__(self, options: Options = default_options):
+    def __init__(self, options: Options = default_options, prog="gslide2media"):
+        self.formatter_width = 140
+        self.max_help_position = 140
         super().__init__(
-            prog="gslide2media",
+            prog=prog,
             usage="gslide2media {img, mp4} {presentation, folder} [options]",
+            formatter_class=lambda prog: argparse.HelpFormatter(
+                prog=prog,
+                width=self.formatter_width,
+                max_help_position=self.max_help_position,
+            ),
         )
         self.arg_namespace = options
         self._default_args = self.arg_namespace.__dict__
@@ -28,30 +39,42 @@ class ArgParser(argparse.ArgumentParser):
         """
 
         self._set_args()
+        self._check_for_tools_and_run()
         self._sanitize_input()
         self._fix_path_strings()
         return self.arg_namespace
 
     def _build_parser(self):
         self.subparsers = self.add_subparsers(
-            title="export as", parser_class=argparse.ArgumentParser, metavar=""
+            title="Available Commands", parser_class=argparse.ArgumentParser, metavar=""
         )
+
         self.img_parser = self.subparsers.add_parser(
             "img",
             help=(
-                "options for exporting google slides presentation(s) as (an) image(s). "
+                "command for exporting google slides presentation(s) as (an) image(s). "
                 "svg, png, or jpeg"
             ),
             usage="gslide2media img {presentation, folder} [options]",
+            formatter_class=lambda prog: argparse.HelpFormatter(
+                prog=prog,
+                width=self.formatter_width,
+                max_help_position=self.max_help_position,
+            ),
         )
         self.img_parser.set_defaults(create_images=True)
 
         self.mp4_parser = self.subparsers.add_parser(
             "mp4",
             help=(
-                "options for exporting google slides " "presentation(s) as (an) mp4(s)."
+                "command for exporting google slides " "presentation(s) as (an) mp4(s)."
             ),
             usage="gslide2media mp4 {presentation, folder} [options]",
+            formatter_class=lambda prog: argparse.HelpFormatter(
+                prog=prog,
+                width=self.formatter_width,
+                max_help_position=self.max_help_position,
+            ),
         )
         self.mp4_parser.set_defaults(create_mp4s=True)
 
@@ -75,6 +98,11 @@ class ArgParser(argparse.ArgumentParser):
                 "[--credentials-pattern CREDENTIALS_PATTERN][--credentials-file CREDENTIALS_FILE] "
                 "[--token-pattern TOKEN_PATTERN] [--token-file TOKEN_FILE]"
             ),
+            formatter_class=lambda prog: argparse.HelpFormatter(
+                prog=prog,
+                width=self.formatter_width,
+                max_help_position=self.max_help_position,
+            ),
         )
         self.img_presentation_parser = self.img_subparsers.add_parser(
             "presentation",
@@ -90,6 +118,11 @@ class ArgParser(argparse.ArgumentParser):
                 "[--credentials-file CREDENTIALS_FILE] [--token-pattern TOKEN_PATTERN] "
                 "[--token-file TOKEN_FILE]"
             ),
+            formatter_class=lambda prog: argparse.HelpFormatter(
+                prog=prog,
+                width=self.formatter_width,
+                max_help_position=self.max_help_position,
+            ),
         )
         self.mp4_folder_parser = self.mp4_subparsers.add_parser(
             "folder",
@@ -103,6 +136,11 @@ class ArgParser(argparse.ArgumentParser):
                 "DOWNLOAD_DIRECTORY] [--aspect-ratio ASPECT_RATIO] [--dpi DPI] [--screen-width "
                 "SCREEN_WIDTH] [--screen-height SCREEN_HEIGHT]"
             ),
+            formatter_class=lambda prog: argparse.HelpFormatter(
+                prog=prog,
+                width=self.formatter_width,
+                max_help_position=self.max_help_position,
+            ),
         )
         self.mp4_presentation_parser = self.mp4_subparsers.add_parser(
             "presentation",
@@ -115,19 +153,107 @@ class ArgParser(argparse.ArgumentParser):
                 "MP4_TOTAL_VIDEO_DURATION] [-d DOWNLOAD_DIRECTORY] [--aspect-ratio ASPECT_RATIO]"
                 " [--dpi DPI] [--screen-width SCREEN_WIDTH] [--screen-height SCREEN_HEIGHT]"
             ),
+            formatter_class=lambda prog: argparse.HelpFormatter(
+                prog=prog,
+                width=self.formatter_width,
+                max_help_position=self.max_help_position,
+            ),
+        )
+
+        self.interactive_parser = self.subparsers.add_parser(
+            "interactive",
+            help="start gslide2media in interactive mode",
+            usage="gslide2media interactive",
+            formatter_class=lambda prog: argparse.HelpFormatter(
+                prog=prog,
+                width=self.formatter_width,
+                max_help_position=self.max_help_position,
+            ),
+        )
+        self.interactive_parser.set_defaults(interactive=True)
+
+        self.generate_parser = self.subparsers.add_parser(
+            "generate",
+            help=("various generate helpful for the use of gslide2media."),
+            usage="gslide2media generate [command]",
+            formatter_class=lambda prog: argparse.HelpFormatter(
+                prog=prog,
+                width=self.formatter_width,
+                max_help_position=self.max_help_position,
+            ),
+        )
+        self.generate_subparsers = self.generate_parser.add_subparsers(
+            title="Categories", parser_class=argparse.ArgumentParser, metavar=""
+        )
+        self.generate_auth_google_api_project_parser = self.generate_subparsers.add_parser(
+            "google-client-secret",
+            help=(
+                "Opens Instructions in default web browser on how to set up a google api project "
+                "and download a client_secret*.json file."
+            ),
+            usage="gslide2media generate auth google-client-secret",
+            formatter_class=lambda prog: argparse.HelpFormatter(
+                prog=prog,
+                width=self.formatter_width,
+                max_help_position=self.max_help_position,
+            ),
+        )
+        self.generate_auth_google_api_project_parser.set_defaults(
+            tool_auth_google_api_project=True
+        )
+
+        self.toots_auth_google_generate_and_refresh_token_parser = self.generate_subparsers.add_parser(
+            "google-token",
+            help=(
+                "Generates a new or refreshes an existing token.json.  If one doesn't already "
+                "exist, a google OAuth workflow is initiated using the default web browser."
+            ),
+            usage="gslide2media generate auth google-token",
+            formatter_class=lambda prog: argparse.HelpFormatter(
+                prog=prog,
+                width=self.formatter_width,
+                max_help_position=self.max_help_position,
+            ),
+        )
+        self.toots_auth_google_generate_and_refresh_token_parser.set_defaults(
+            tool_google_auth_token=True
+        )
+
+        self.import_parser = self.subparsers.add_parser(
+            "import",
+            help="import google auth credentials.",
+            usage="gslide2media import [command]",
+            formatter_class=lambda prog: argparse.HelpFormatter(
+                prog=prog,
+                width=self.formatter_width,
+                max_help_position=self.max_help_position,
+            ),
+        )
+        self.import_subparsers = self.import_parser.add_subparsers(
+            title="import", parser_class=argparse.ArgumentParser, metavar=""
+        )
+        self.import_auth_google_api_project_parser = self.import_subparsers.add_parser(
+            "google-client-secret",
+            help=(
+                "Opens Instructions in default web browser on how to set up a google api project "
+                "and download a client_secret*.json file."
+            ),
+            usage="gslide2media generate auth google-client-secret",
+            formatter_class=lambda prog: argparse.HelpFormatter(
+                prog=prog,
+                width=self.formatter_width,
+                max_help_position=self.max_help_position,
+            ),
         )
 
     def _set_args(self):
-        self._add_authentication_args(self)
         self._add_folder_args(self.img_folder_parser)
         self._add_image_args(self.img_folder_parser)
         self._add_standard_args(self.img_folder_parser)
-        self._add_authentication_args(self.img_folder_parser)
 
         self._add_presentation_args(self.img_presentation_parser)
         self._add_image_args(self.img_presentation_parser)
         self._add_standard_args(self.img_presentation_parser)
-        self._add_authentication_args(self.img_presentation_parser)
 
         self._add_folder_args(self.mp4_folder_parser)
         self._add_mp4_args(self.mp4_folder_parser)
@@ -152,8 +278,8 @@ class ArgParser(argparse.ArgumentParser):
             args.append("folder")
             args.extend(["--folder-id", self.arg_namespace.folder_id])
 
-            if self.arg_namespace.run_on_only_first_in_folder:
-                args.append("--run-on-only-first-in-folder")
+            if self.arg_namespace.run_all:
+                args.append("--run-all")
 
         elif self.arg_namespace.presentation_id:
             args.append("presentation")
@@ -246,6 +372,18 @@ class ArgParser(argparse.ArgumentParser):
             # Get the args from sys.argv
             self.parse_args(namespace=self.arg_namespace)
 
+    def _check_for_tools_and_run(self):
+        if len(sys.argv) >= 2 and len(sys.argv) <= 3:
+            if sys.argv[1] == "generate":
+                if len(sys.argv) == 3:
+                    if sys.argv[2] == "google-client-secret":
+                        self.arg_namespace.tool_auth_google_api_project = True
+                        client_secret_path = GoogleApiProject()()
+                        config.META.import_google_client_secret_json(client_secret_path)
+                    elif sys.argv[2] == "google-token":
+                        self.arg_namespace.tool_google_auth_token = True
+                    raise SystemExit
+
     def _check_should_print_help(self):
         if not self.arg_namespace.from_api:
             if len(sys.argv) == 1:
@@ -257,9 +395,13 @@ class ArgParser(argparse.ArgumentParser):
                     self.img_parser.print_help(sys.stdout)
                 elif sys.argv[1] == "mp4":
                     self.mp4_parser.print_help(sys.stdout)
+                elif sys.argv[1] == "generate":
+                    self.generate_parser.print_help(sys.stdout)
+                elif sys.argv[1] == "import":
+                    self.import_parser.print_help(sys.stdout)
                 raise SystemExit
 
-            if len(sys.argv) == 3:
+            if len(sys.argv) >= 2 and len(sys.argv) <= 3:
                 if sys.argv[1] == "img":
                     if sys.argv[2] == "folder":
                         self.img_folder_parser.print_help()
@@ -274,7 +416,6 @@ class ArgParser(argparse.ArgumentParser):
 
     def _add_standard_args(self, parser: argparse.ArgumentParser):
         parser.add_argument(
-            "-d",
             "--download-directory",
             type=(lambda arg: self._validate_is_pathlike(arg)),
             help="Path to working directory. creates if not exist.",
@@ -307,40 +448,6 @@ class ArgParser(argparse.ArgumentParser):
             help="Screen height in Pixels of output image(s) or video(s).",
         )
 
-    def _add_authentication_args(self, parser: argparse.ArgumentParser):
-        authentication = parser.add_argument_group("authentication")
-
-        authentication.add_argument(
-            "--credentials-pattern",
-            type=str,
-            default="client_secret*.json",
-            help=(
-                "string pattern to search for google api credentials json file. "
-                "default: 'client_secret*.json'"
-            ),
-        )
-        authentication.add_argument(
-            "--credentials-file",
-            type=(lambda arg: self._validate_is_pathlike(arg)),
-            help=(
-                "Path to' google api credentials json file.  "
-                "default matches --credentials-pattern in the current directory."
-            ),
-        )
-        authentication.add_argument(
-            "--token-pattern",
-            type=str,
-            default="token.json",
-            help="string pattern to search for google api token json file. "
-            "default: 'token.json'",
-        )
-        authentication.add_argument(
-            "--token-file",
-            type=(lambda arg: self._validate_is_pathlike(arg)),
-            help="Path to google api token.json file.  "
-            "default matches --token-pattern in the current directory.",
-        )
-
     def _add_image_args(self, parser: argparse.ArgumentParser):
         images = parser.add_argument_group("images")
 
@@ -351,7 +458,6 @@ class ArgParser(argparse.ArgumentParser):
         )
 
         parser.add_argument(
-            "-f",
             "--image-file-format",
             type=str,
             default="svg",
@@ -370,7 +476,6 @@ class ArgParser(argparse.ArgumentParser):
 
         mp4 = parser.add_argument_group("mp4")
         parser.add_argument(
-            "-s",
             "--mp4-slide-duration-secs",
             type=int,
             default=20,
@@ -380,7 +485,6 @@ class ArgParser(argparse.ArgumentParser):
             ),
         )
         mp4.add_argument(
-            "-t",
             "--mp4-total-video-duration",
             type=self._int_or_none,
             default=None,
@@ -398,15 +502,13 @@ class ArgParser(argparse.ArgumentParser):
     def _add_folder_args(self, parser: argparse.ArgumentParser):
         folder = parser.add_argument_group("folder")
         parser.add_argument(
-            "-i",
             "--folder-id",
             type=str,
             required=True,
             help="Google Drive folder id to search for slides presentations.",
         )
         folder.add_argument(
-            "-r",
-            "--run-on-only-first-in-folder",
+            "--run-all",
             action="store_true",
             help=(
                 "When converting a folder of presentations, run only on first discovered "
@@ -435,55 +537,49 @@ class ArgParser(argparse.ArgumentParser):
         return string
 
     def _fix_path_strings(self):
+        # Fix --download-directory
         self.arg_namespace.download_directory = (
             Path(self.arg_namespace.download_directory)
             if self.arg_namespace.download_directory
             else Path(Path(".").resolve())
         )
 
-        print(self.arg_namespace.credentials_file)
-        print(self.arg_namespace.credentials_pattern)
-
-
-        print(self.arg_namespace.download_directory.glob(self.arg_namespace.credentials_pattern))
-
+        # Fix --token-file
         try:
-            self.arg_namespace.credentials_file = (
-                Path(self.arg_namespace.credentials_file)
-                if self.arg_namespace.credentials_file
+            if (
+                self.arg_namespace.token_file
+                and Path(self.arg_namespace.token_file).is_dir()
+            ):
+                self.arg_namespace.token_file = next(
+                    Path(self.arg_namespace.token_file).glob(
+                        self.arg_namespace.token_pattern
+                    ),
+                    None,
+                )
+
+            self.arg_namespace.token_file = (
+                Path(self.arg_namespace.token_file)
+                if self.arg_namespace.token_file
                 else next(
                     self.arg_namespace.download_directory.glob(
-                        self.arg_namespace.credentials_pattern
+                        self.arg_namespace.token_pattern
                     )
                 )
             )
-        except StopIteration as err:
-            raise ValueError((
-                "credentials json file not found that matches the pattern in the directory provided."
-                f"  pattern: {self.arg_namespace.credentials_pattern}"
-                f"  directory: {self.arg_namespace.download_directory}\n"
-                "Follow the instructions for creating a Google API project and creating a client"
-                "_secret*.json at:\n"
-                "  https://github.com/dmidlo/gslide2media/blob/main/GoogleAPIConfig.md"
-            )) from err
-
-
-        self.arg_namespace.token_file = Path(self.arg_namespace.token_file)
-
-        if self.arg_namespace.credentials_file.is_dir():
-            self.arg_namespace.credentials_file = next(
-                Path(self.arg_namespace.credentials_file).glob(
-                    self.arg_namespace.credentials_pattern
-                ),
-                None,
+        except StopIteration:
+            print(
+                (
+                    "token.json file not found that matches the pattern in the directory provided."
+                    f"  pattern: {self.arg_namespace.token_pattern}"
+                    f"  directory: {self.arg_namespace.download_directory}\n"
+                    "Attempting OAuth Flow.."
+                )
             )
 
-        if self.arg_namespace.token_file.is_dir():
-            self.arg_namespace.token_file = next(
-                Path(self.arg_namespace.token_file).glob(
-                    self.arg_namespace.token_pattern
-                ),
-                None,
+            auth = AuthGoogle(
+                Path(self.arg_namespace.download_directory, "token.json"),
+                API_SCOPES,
+                self.arg_namespace.credentials_file,
             )
 
     @staticmethod

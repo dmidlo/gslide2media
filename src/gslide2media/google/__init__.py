@@ -96,11 +96,12 @@ class GoogleClient:
         self.options = options
 
         self.auth_google: AuthGoogle = AuthGoogle(
-            self.options.token_file, config.API_SCOPES, self.options.credentials_file
+            self.options.token_file, config.API_SCOPES
         )
         self.presentations_from_drive_folder: list = (
-            self.get_presentations_from_drive_folder()
+            self.get_presentations_from_drive_folder(folder_id=self.options.folder_id)
         )
+        self.root_folder_id = self.get_root_folder_id()
 
     @property
     def options(self) -> Options:
@@ -185,8 +186,21 @@ class GoogleClient:
         """Delete the list of Google Slides presentations from the Drive folder."""
         del self._presentations_from_drive_folder
 
+    @property
+    def root_folder_id(self) -> str:
+        return self._root_folder_id
+
+    @root_folder_id.setter
+    def root_folder_id(self, root_folder_id: str):
+        self._root_folder_id: str = root_folder_id
+
+    @root_folder_id.deleter
+    def root_folder_id(self):
+        del self._root_folder_id
+
     def get_presentations_from_drive_folder(  # type:ignore
         self,
+        folder_id,
     ) -> list | None:
         """Get the list of Google Slides presentations from a specified Drive folder.
 
@@ -197,11 +211,11 @@ class GoogleClient:
                             occurred.
         """
 
-        if self.options.folder_id:
+        if folder_id:
             try:
                 # Query to get slides presentations in the specified folder
                 query: str = (
-                    f"'{self.options.folder_id}' in parents "
+                    f"'{folder_id}' in parents "
                     "and mimeType='application/vnd.google-apps.presentation' "
                     "and trashed = false"
                 )
@@ -217,6 +231,15 @@ class GoogleClient:
             except HttpError as error:
                 print(f"An error occurred: {error}")
                 return None
+
+    def get_root_folder_id(self) -> str:
+        query = "'root' in parents"
+        results = (
+            self.auth_google.drive_service.files()
+            .list(q=query, fields="files(id)")
+            .execute()
+        )
+        return results.get("files", [])[0].get("id")
 
     def get_google_slides_presentation(self, presentation_id: str) -> dict:
         """Get a google slide presentation by id.
@@ -519,7 +542,9 @@ class GoogleClient:
                 video file as bytes.
 
         """
-        for _ in self.get_presentations_from_drive_folder():  # type:ignore
+        for _ in self.get_presentations_from_drive_folder(
+            folder_id=self.options.folder_id
+        ):  # type:ignore
             presentation_id: str = _["id"]
             slides_data: Generator = self.get_slides_data_from_presentation(
                 presentation_id
@@ -546,5 +571,5 @@ class GoogleClient:
                     self.options.save_mp4_to_file,
                 )
 
-            if self.options.run_on_only_first_in_folder:
+            if not self.options.run_all:
                 break

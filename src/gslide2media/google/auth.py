@@ -21,6 +21,8 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import Resource
 from googleapiclient.discovery import build
 
+from gslide2media import config
+
 
 class AuthGoogle:
     """Class for authenticating Google API requests.
@@ -44,12 +46,7 @@ class AuthGoogle:
         None
     """
 
-    def __init__(
-        self,
-        token_file: Path | None,
-        api_scopes: list[str],
-        credentials_file: Path | None,
-    ) -> None:
+    def __init__(self, token_file: Path | None, api_scopes: list[str]) -> None:
         """Initialize AuthGoogle class.
 
         Args:
@@ -59,16 +56,7 @@ class AuthGoogle:
                     Path to Google API credentials file. Defaults to None.
 
         """
-        self.creds: Credentials | None = self.load_google_auth_creds_from_file(
-            token_file, api_scopes
-        )
-        self.creds = self.refresh_google_auth_creds(self.creds)
-        self.creds = self.initiate_google_oauth_flow(
-            self.creds, credentials_file, api_scopes
-        )
-        self.creds = self.refresh_google_auth_creds(self.creds)  # needs to be twice.
-
-        self.save_token_file_to_disk(self.creds, token_file)
+        self.refresh_token_json_file(token_file, api_scopes)
 
         self.slides_service: Resource = self.create_slides_service()
         self.drive_service: Resource = self.create_drive_service()
@@ -259,7 +247,7 @@ class AuthGoogle:
 
     @staticmethod
     def initiate_google_oauth_flow(
-        creds: Credentials, credentials_file: Optional[Path], api_scopes: list[str]
+        creds: Credentials, api_scopes: list[str]
     ) -> Credentials:
         """Initiate Google OAuth flow for authorization.
 
@@ -281,10 +269,9 @@ class AuthGoogle:
         Returns:
             Credentials: The obtained Google authorization credentials as a `Credentials` object.
         """
-
         if not creds:
-            flow: "InstalledAppFlow" = InstalledAppFlow.from_client_secrets_file(
-                credentials_file, api_scopes
+            flow: "InstalledAppFlow" = InstalledAppFlow.from_client_config(
+                config.META.google_client_secret, api_scopes
             )
             creds = flow.run_local_server(port=0)
         return creds
@@ -341,3 +328,15 @@ class AuthGoogle:
             AuthorizedSession: An authorized session with Google services.
         """
         return AuthorizedSession(self.creds)
+
+    def refresh_token_json_file(self, token_file, api_scopes):
+        self.creds: Credentials | None = self.load_google_auth_creds_from_file(
+            token_file, api_scopes
+        )
+        self.creds = self.refresh_google_auth_creds(self.creds)
+        self.creds = self.initiate_google_oauth_flow(self.creds, api_scopes)
+
+        # needs to be twice to fill out creds attributes.
+        self.creds = self.refresh_google_auth_creds(self.creds)
+
+        self.save_token_file_to_disk(self.creds, token_file)

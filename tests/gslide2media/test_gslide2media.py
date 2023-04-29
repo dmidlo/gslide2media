@@ -58,7 +58,7 @@ def default_options() -> Options:
             "img_with_folder_id",
             {
                 "folder_id": "0B9ytToO3rm0mVW43MmttZTRJc2c",
-                "run_on_only_first_in_folder": True,
+                "run_all": False,
                 "create_images": True,
                 "image_file_format": "svg",
                 "save_images_to_file": True,
@@ -72,7 +72,6 @@ def default_options() -> Options:
 )
 def test_gslide2media_API(options_set, options_obj, default_options):
     options = default_options
-    print(options_obj)
     options(**options_obj)
 
     to_media = gslide2media(options)

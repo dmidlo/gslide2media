@@ -10,12 +10,19 @@ python = "^3.10"
 google-api-python-client = "*"
 google-auth-oauthlib = "^1.0.0"
 cairosvg = "^2.7.0"
-imageio = "^2.27.0"
+imageio = {version = "^2.27.0", extras = ["ffmpeg"]}
+inquirerpy = "^0.3.4"
+pyperclip = "^1.8.2"
+pyyaml = "^6.0"
+cryptography = "^40.0.2"
 
 [tool.poetry.scripts]
 gslide2media = "gslide2media.__main__:main"
+
 [tool.poetry.group.dev.dependencies]
 pytest = "*"
 mypy = "^1.2.0"
 black = "^23.3.0"
+rich = "^13.3.4"
+types-pyyaml = "^6.0.12.9"
 

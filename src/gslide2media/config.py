@@ -6,6 +6,8 @@ Variables:
 - API_SCOPES: list[str] - list of API scopes for the Google Drive API
 
 """
+from gslide2media.meta import Metadata
 
+META: Metadata | None = None
 MP4_IMAGE_FILE_FORMAT: str = "png"
 API_SCOPES: list[str] = ["https://www.googleapis.com/auth/drive"]

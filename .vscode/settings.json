@@ -2,8 +2,11 @@
     "cSpell.words": [
         "argparser",
         "cairosvg",
+        "clientid",
         "creds",
+        "fernet",
         "googleapiclient",
+        "googleapis",
         "gslide",
         "imageio",
         "imread",
@@ -11,6 +14,7 @@
         "namedtuples",
         "pageid",
         "pngs",
-        "sourcery"
+        "sourcery",
+        "urandom"
     ]
 }
