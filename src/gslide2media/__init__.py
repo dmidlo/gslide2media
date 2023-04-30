@@ -11,7 +11,7 @@ import sys
 
 from gslide2media.options import Options
 from gslide2media.google import GoogleClient
-from gslide2media.google.auth import AuthGoogle
+from gslide2media.google import AuthGoogle
 
 from . import to_media
 

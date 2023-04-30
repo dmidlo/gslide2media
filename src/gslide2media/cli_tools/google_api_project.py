@@ -1,5 +1,5 @@
 """
-tools/google_api_project.py
+cli_tools/google_api_project.py
 
 This module provides a CLI for setting up a new Google API project, using various Google APIs to
 automate the setup process. The `GoogleApiProject` class is the main entry point for executing the
