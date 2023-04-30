@@ -47,10 +47,6 @@ class ToMedia:
         config.META = Metadata.metadata_singleton_factory()
         self.ARGS = ArgParser(options)()
         self.GOOGLE = GoogleClient(self.ARGS)
-        print("0", config.META.google_client_token)
-        print("1", self.ARGS)
-        raise SystemExit
-
 
         if self.ARGS.presentation_id:
             self.presentations_in_google_folder = None
