@@ -1,41 +1,45 @@
 """
-.. module:: google-api-project
-   :platform: Unix, Windows
-   :synopsis: This Python file contains a class called `ManualSteps` which provides a set of manual
-   steps for setting up a Google API project. The class extends the `OrderedDict` class.
+tools/google_api_project.py
+
+This module provides a CLI for setting up a new Google API project, using various Google APIs to
+automate the setup process. The `GoogleApiProject` class is the main entry point for executing the
+setup process.
 
 Usage:
-    - To use this file, create an instance of the `GoogleApiProject` class and call it as a
-    function (IIFE with __call__). This will initiate the setup process and guide the user through
-    each step. The `run` method will return the path to the client secret JSON file if all steps
-    are completed successfully, or `None` otherwise.
+    1. Create an instance of `GoogleApiProject`.
+    2. Call the instance as a function using IIFE syntax to initiate the setup process.
+    3. The `run` method will guide the user through the necessary manual steps to complete the setup
+       process.
+    4. If all steps are completed successfully, `run` will return the path to the client secret JSON
+       file.
+        Otherwise, it will return `None`.
 
-.. moduleauthor:: David Midlo dmidlo@gmail.com
-
-This module provides a command-line interface (CLI) to help set up a new Google API project. It
-uses various Google APIs to automate the setup process, including the Drive API and Slides API.
 The CLI includes several manual steps that the user must follow, such as setting the project name,
-enabling API services, and creating OAuth client IDs. These manual steps are organized in a list
-of OrderedDict objects, which is defined in the ManualSteps class. The module uses several third-
-party libraries, such as InquirerPy and Rich, to provide a user-friendly and visually appealing CLI.
+enabling API services, and creating OAuth client IDs. These manual steps are organized in a
+collection of `ManualSteps` objects, which are defined in the `ManualSteps` class. The module uses
+several third-party libraries, such as InquirerPy and Rich, to provide a user-friendly and visually
+appealing CLI.
 
 Classes:
-    - ``ManualSteps``: This class extends `OrderedDict` and represents a collection of manual steps
-        required to set up the Google API project. Each step is defined as a key-value pair, where
-        the key is a description of the step and the value is a dictionary containing information
-        about the step's completion status and associated functions.
-    - ``GoogleApiProject``: This class represents the main entry point for executing the Google API
-        project setup. It initializes an instance of `ManualSteps` and provides a `run` method to
-        execute the necessary steps.
+    - ManualSteps: This class extends `OrderedDict` and represents a collection of manual steps
+                     required to set up the Google API project. Each step is defined as a key-value
+                     pair, where the key is a description of the step and the value is a dictionary
+                     containing information about the step's completion status and associated
+                     functions.
+
+    - GoogleApiProject: This class represents the main entry point for executing the Google API
+                        project setup. It initializes an instance of `ManualSteps` and provides a
+                        `run` method to execute the necessary steps.
 
 Example:
-.. code-block::python
-google_api_project = GoogleApiProject()
-client_secret_path = google_api_project.run()
-if client_secret_path:
-    print(f"Client secret JSON file path: {client_secret_path}")
-else:
-    print("Google API project setup was not completed.")
+    ```python
+    google_api_project = GoogleApiProject()
+    client_secret_path = google_api_project.run()
+    if client_secret_path:
+        print(f"Client secret JSON file path: {client_secret_path}")
+    else:
+        print("Google API project setup was not completed.")
+    ```
 """
 
 from collections import OrderedDict
@@ -55,9 +59,6 @@ from rich.progress import track
 
 class ManualSteps(OrderedDict):
     """
-    ManualSteps
-    ===========
-
     A class that represents a series of manual steps for setting up a Google Cloud project.
 
     This class is a subclass of `collections.OrderedDict` that is used to define a series of manual
@@ -66,41 +67,32 @@ class ManualSteps(OrderedDict):
     about the step. The information includes whether the step is complete, a function to execute for
     the step, and any arguments that need to be passed to the function.
 
-    Attributes
-    ----------
-    project_name : str
-        The name of the Google Cloud project.
-    project_url : str
-        The URL of the Google Cloud Console dashboard for the project.
-    cloud_drive_api_url : str
-        The URL of the Google Drive API library for the project.
-    slides_api_url : str
-        The URL of the Google Slides API library for the project.
-    consent_screen_wizard_url : str
-        The URL of the Create OAuth Client ID wizard for configuring the consent screen.
-    oauth_clientid_wizard_url : str
-        The URL of the Create OAuth Client ID wizard for creating an OAuth client ID for the project.
-    project_credentials_url : str
-        The URL of the Google Cloud Console Credentials page for the project.
+    Attributes:
+        project_name (str): The name of the Google Cloud project.
+        project_url (str): The URL of the Google Cloud Console dashboard for the project.
+        cloud_drive_api_url (str): The URL of the Google Drive API library for the project.
+        slides_api_url (str): The URL of the Google Slides API library for the project.
+        consent_screen_wizard_url (str): The URL of the Create OAuth Client ID wizard for
+                                         configuring the consent screen.
+        oauth_clientid_wizard_url (str): The URL of the Create OAuth Client ID wizard for creating
+                                         an OAuth client ID for the project.
+        project_credentials_url (str): The URL of the Google Cloud Console Credentials page for the
+                                       project.
 
-    Methods
-    -------
-    __init__()
-        Initializes a new instance of the ManualSteps class.
-    get_project_name()
-        Prompts the user to enter a name for the Google Cloud project.
-    verify_project_url()
-        Verifies the project URL entered by the user.
-    enable_api_services(services: set)
-        Enables the specified Google Cloud API services for the project.
-    configure_consent_screen()
-        Configures the consent screen using the Create OAuth Client ID wizard.
-    open_client_id_wizard()
-        Opens the Create OAuth Client ID wizard for creating an OAuth client ID for the project.
-    client_secret_download_instructions()
-        Provides instructions for downloading the Google Auth client secret JSON file.
-    import_google_client_secret_json_dialog()
-        Prompts the user to import the Google Auth client secret JSON file.
+    Methods:
+        __init__(): Initializes a new instance of the ManualSteps class.
+        get_project_name(): Prompts the user to enter a name for the Google Cloud project.
+        verify_project_url(): Verifies the project URL entered by the user.
+        enable_api_services(services: set): Enables the specified Google Cloud API services for the
+                                            project.
+        configure_consent_screen(): Configures the consent screen using the Create OAuth Client ID
+                                    wizard.
+        open_client_id_wizard(): Opens the Create OAuth Client ID wizard for creating an OAuth
+                                 client ID for the project.
+        client_secret_download_instructions(): Provides instructions for downloading the Google Auth
+                                               client secret JSON file.
+        import_google_client_secret_json_dialog(): Prompts the user to import the Google Auth client
+                                                   secret JSON file.
     """
     def __init__(self) -> None:
         super().__init__(self)
@@ -183,8 +175,8 @@ class ManualSteps(OrderedDict):
         """
         Returns the project name.
 
-        :return: The project name.
-        :rtype: str
+        Returns:
+            str: The project name.
         """
         return self._project_name
 
@@ -193,9 +185,11 @@ class ManualSteps(OrderedDict):
         """
         Sets the project name.
 
-        :param project_name: The new project name.
-        :type project_name: str
-        :return: None.
+        Args:
+            project_name (str): The new project name.
+
+        Returns:
+            None.
         """
         self._project_name: str = project_name
 
@@ -204,7 +198,8 @@ class ManualSteps(OrderedDict):
         """
         Deletes the project name.
 
-        :return: None.
+        Returns:
+            None.
         """
         del self._project_name
 
@@ -213,8 +208,8 @@ class ManualSteps(OrderedDict):
         """
         Returns the URL of the project dashboard.
 
-        :return: The URL of the project dashboard.
-        :rtype: str
+        Returns:
+            str: The URL of the project dashboard.
         """
         return self._project_url
 
@@ -223,9 +218,11 @@ class ManualSteps(OrderedDict):
         """
         Sets the URL of the project dashboard.
 
-        :param project_name: The name of the project.
-        :type project_name: str
-        :return: None.
+        Args:
+            project_name (str): The name of the project.
+
+        Returns:
+            None.
         """
         self._project_url: str = (
             f"https://console.cloud.google.com/home/dashboard?project={project_name}"
@@ -236,7 +233,8 @@ class ManualSteps(OrderedDict):
         """
         Deletes the URL of the project dashboard.
 
-        :return: None.
+        Returns:
+            None.
         """
         del self._project_url
 
@@ -255,9 +253,11 @@ class ManualSteps(OrderedDict):
         """
         Sets the URL of the Cloud Drive API.
 
-        :param project_name: The name of the project.
-        :type project_name: str
-        :return: None.
+        Args:
+            project_name (str): The name of the project.
+
+        Returns:
+            None.
         """
         self._cloud_drive_api_url: str = ("https://console.cloud.google.com/apis/library/"
                                           f"drive.googleapis.com?project={project_name}")
@@ -267,120 +267,119 @@ class ManualSteps(OrderedDict):
         """
         Deletes the URL of the Cloud Drive API.
 
-        :return: None.
+        Returns:
+            None.
         """
         del self._cloud_drive_api_url
 
     @property
     def slides_api_url(self) -> str:
-        """
-        Returns the URL of the Slides API.
+        """Returns the URL of the Slides API.
 
-        :return: The URL of the Slides API.
-        :rtype: str
+        Returns:
+            The URL of the Slides API.
         """
         return self._slides_api_url
 
     @slides_api_url.setter
     def slides_api_url(self, project_name: str) -> None:
-        """
-        Sets the URL of the Slides API.
+        """Sets the URL of the Slides API.
 
-        :param project_name: The name of the project.
-        :type project_name: str
-        :return: None.
+        Args:
+            url (str): The new URL of the Slides API.
+
+        Returns:
+            None.
         """
         self._slides_api_url: str = ("https://console.cloud.google.com/apis/library/"
                                      f"slides.googleapis.com?project={project_name}")
 
     @slides_api_url.deleter
     def slides_api_url(self) -> None:
-        """
-        Deletes the URL of the Slides API.
+        """Deletes the URL of the Slides API.
 
-        :return: None.
+        Returns:
+            None.
         """
         del self._slides_api_url
 
     @property
     def consent_screen_wizard_url(self) -> str:
-        """
-        Returns the URL of the Consent Screen Wizard.
+        """Returns the URL of the Consent Screen Wizard.
 
-        :return: The URL of the Consent Screen Wizard.
-        :rtype: str
+        Returns:
+            The URL of the Consent Screen Wizard.
         """
         return self._consent_screen_wizard_url
 
     @consent_screen_wizard_url.setter
     def consent_screen_wizard_url(self, project_name: str) -> None:
-        """
-        Sets the URL of the Consent Screen Wizard.
+        """Sets the URL of the Consent Screen Wizard.
 
-        :param project_name: The name of the project.
-        :type project_name: str
-        :return: None.
+        Args:
+            url (str): The new URL of the Consent Screen Wizard.
+
+        Returns:
+            None.
         """
         self._consent_screen_wizard_url: str = ("https://console.cloud.google.com/apis/credentials/"
                                                 f"oauthclient?project={project_name}")
 
     @consent_screen_wizard_url.deleter
     def consent_screen_wizard_url(self) -> None:
-        """
-        Deletes the URL of the Consent Screen Wizard.
+        """Deletes the URL of the Consent Screen Wizard.
 
-        :return: None.
+        Returns:
+            None.
         """
         del self._consent_screen_wizard_url
 
     @property
     def oauth_clientid_wizard_url(self) -> str:
-        """
-        Returns the URL of the OAuth Client ID Wizard.
+        """Returns the URL of the OAuth Client ID Wizard.
 
-        :return: The URL of the OAuth Client ID Wizard.
-        :rtype: str
+        Returns:
+            The URL of the OAuth Client ID Wizard.
         """
         return self._oauth_clientid_wizard_url
 
     @oauth_clientid_wizard_url.setter
     def oauth_clientid_wizard_url(self, project_name: str) -> None:
-        """
-        Sets the URL of the OAuth Client ID Wizard.
+        """Sets the URL of the OAuth Client ID Wizard.
 
-        :param project_name: The name of the project.
-        :type project_name: str
+        Args:
+            project_name (str): The name of the project.
 
-        :return: None.
+        Returns:
+            None.
         """
         self._oauth_clientid_wizard_url: str = ("https://console.cloud.google.com/apis/credentials/"
                                                 f"oauthclient?project={project_name}")
 
     @oauth_clientid_wizard_url.deleter
     def oauth_clientid_wizard_url(self) -> None:
-        """
-        Deletes the URL of the OAuth Client ID Wizard.
+        """Deletes the URL of the OAuth Client ID Wizard.
 
-        :return: None.
+        Returns:
+            None.
         """
         del self._oauth_clientid_wizard_url
 
     @property
     def project_credentials_url(self) -> str:
-        """
-        Returns the URL of the Google API Project's Credentials Page.
+        """Returns the URL of the Google API Project's Credentials Page.
 
-        :return: The URL of the Google API Project's Credentials Page
-        :rtype: str
+        Returns:
+            str: The URL of the Google API Project's Credentials Page.
         """
         return self._project_credentials_url
 
     @project_credentials_url.setter
     def project_credentials_url(self, project_name: str) -> None:
-        """
-        Sets the URL of the Google API Project's Credentials Page.
+        """Sets the URL of the Google API Project's Credentials Page.
 
-        :return: None.
+        Returns:
+            None.
         """
         self._project_credentials_url: str = (
             f"https://console.cloud.google.com/apis/credentials?project={project_name}"
@@ -388,21 +387,19 @@ class ManualSteps(OrderedDict):
 
     @project_credentials_url.deleter
     def project_credentials_url(self) -> None:
-        """
-        Deletes the URL of the Google API Project's Credentials Page.
+        """Deletes the URL of the Google API Project's Credentials Page.
 
-        :return: None.
+        Returns:
+            None.
         """
         del self._project_credentials_url
 
     def get_project_name(self, url: str) -> None:
-        """
-        Display user instructions and prompt the user to choose a name for the Google Cloud project.
+        """Display user instructions and prompt the user to choose a name for the Google Cloud project.
         Set the project name and various URLs based on the chosen name.
 
-        :param url: URL for opening the Google Cloud Console's new project wizard page.
-        :type url: str
-        :return: None
+        Args:
+            url (str): URL for opening the Google Cloud Console's new project wizard page.
         """
 
         print(
@@ -465,15 +462,10 @@ class ManualSteps(OrderedDict):
         self.open_new_project_wizard_in_browser(url)
 
     def open_new_project_wizard_in_browser(self, url: str) -> None:
-        """
-        Opens the Cloud Console's new project wizard page in the user's default browser.
+        """Opens the Cloud Console's new project wizard page in the user's default browser.
 
-        :param url: The URL of the new project wizard page.
-        :type url: str
-        :return: None
-        :rtype: None
-
-        :raises: None
+        Args:
+            url (str): The URL of the new project wizard page.
         """
         if inquirer.confirm(
             message=f"Open Cloud Console New Project Wizard? ({url}) ([Enter] to Open in Browser)",
@@ -507,14 +499,11 @@ class ManualSteps(OrderedDict):
             webbrowser.open(url)
 
     def verify_project_url(self) -> None:
-        """
-        Prints the project URL and asks the user if they want to visit the project dashboard.
+        """Prints the project URL and asks the user if they want to visit the project dashboard.
 
         Prints the project URL, which is used to access the project's dashboard on the Google Cloud
         Console. Asks the user if they would like to visit the project dashboard by opening the URL
         in a default web browser.
-
-        :return: None
         """
         print(
             f"""
@@ -551,10 +540,8 @@ class ManualSteps(OrderedDict):
         the APIs. If the corresponding service is included in the 'services' set, it opens the API
         details page for that service.
 
-        :param services: A set containing the required services to enable.
-        :type services: set
-
-        :return: None
+        Args:
+        services (set): A set containing the required services to enable.
         """
         print(
             f"""
@@ -610,11 +597,8 @@ class ManualSteps(OrderedDict):
 
     def configure_consent_screen(self) -> None:
         """
-        This method opens the Consent Screen Wizard URL in the user's web browser. Then, it provides
-        user instructions for configuring App Information on the OAuth consent screen of
-        the Edit App Registration Page.
-
-        :return: None
+        Opens the Consent Screen Wizard URL in the user's web browser and provides user instructions
+        for configuring App Information on the OAuth consent screen of the Edit App Registration Page.
         """
         if inquirer.confirm(
             message=("Open the Consent Screen Wizard URL. "
@@ -696,11 +680,8 @@ class ManualSteps(OrderedDict):
             webbrowser.open(self.consent_screen_wizard_url)
 
     def open_client_id_wizard(self) -> None:
-        """
-        This method opens the Google OAuth Client Id Wizard URL in the user's web browser.
-        It provides user instructions for configuring the OAuth Client Id wizard.
-
-        :return: None
+        """Opens the Google OAuth Client Id Wizard URL in the user's web browser and provides user
+        instructions for configuring the OAuth Client Id wizard.
         """
         if inquirer.confirm(
             message="Open the Google OAuth Client Id Wizard URL.",
@@ -736,12 +717,9 @@ class ManualSteps(OrderedDict):
             webbrowser.open(self.oauth_clientid_wizard_url)
 
     def client_secret_download_instructions(self) -> None:
-        """
-        This method provides instructions to the user for downloading the client secret JSON file
+        """This method provides instructions to the user for downloading the client secret JSON file
         from the project's credentials page. It also opens the credentials page in the user's web
         browser.
-
-        :return: None
         """
         if inquirer.confirm(
             message=f"Open the project {self.project_name}'s credentials page.",
@@ -774,19 +752,19 @@ class ManualSteps(OrderedDict):
             webbrowser.open(self.project_credentials_url)
 
     def complete_step(self, key) -> None:
-        """Mark a specific step as completed.
+        """
+        Mark a specific step as completed.
 
-        :param key: The key of the step to be marked as complete.
-        :type key: str
-        :return: None
+        Args:
+            key (str): The key of the step to be marked as complete.
         """
         self[key]["complete"] = True
 
     def all_complete(self) -> bool:
         """Check whether all steps have been completed.
 
-        :return: True if all steps have been completed, False otherwise.
-        :rtype: bool
+        Returns:
+            bool: True if all steps have been completed, False otherwise.
         """
         bool_set: set[bool] = {True if self[x]["complete"] else False for x in self}
 
@@ -796,46 +774,39 @@ class ManualSteps(OrderedDict):
     def import_google_client_secret_json_dialog():
         """Open a dialog to prompt the user to enter the path to a Google client secret JSON file.
 
-        :return: The path to the selected file.
-        :rtype: str
+        Returns:
+            str: The path to the selected file.
         """
 
         print("\n\n**For security purposes, the client secret file will be deleted once it has been imported.**\n")
-        path_str = inquirer.filepath(
+        return inquirer.filepath(
             message="Enter path to your google client secret json file to import:",
             default=str(Path().resolve()),
             validate=PathValidator(is_file=True, message="Input is not a file"),
             only_files=True,
         ).execute()
-        return path_str
 
 
 class GoogleApiProject:
+    """Encapsulates functionality for setting up a Google API project.
+    This class provides the necessary steps to guide the user through the project setup process. The
+    class has an instance of the ManualSteps class that manages the individual steps of the project
+    setup.
+
+    Attributes:
+        manual_steps (ManualSteps): An instance of the ManualSteps class that manages the
+            individual steps of the project setup.
+
+    Methods:
+        __call__() -> Union[str, Path, None]:
+            Starts the project setup by calling the run() method and returns the path to the
+            client secret JSON file if available, otherwise returns None.
+
+        run() -> Union[str, Path, None]:
+            Runs the project setup process by executing each step until all steps are completed or
+            the user interrupts the process. Returns the path to the client secret JSON file if
+            available, otherwise returns None.
     """
-    Class representing a Google API Project.
-
-    This class encapsulates the functionality to run the necessary steps for setting up
-    a Google API project.
-
-    ...
-
-    Attributes
-    ----------
-    manual_steps : ManualSteps
-        An instance of the ManualSteps class that manages the individual steps of the project setup.
-
-    Methods
-    -------
-    __call__() -> str | Path | None:
-        Calls the run() method to start the project setup and returns the path to the client secret
-        JSON file if available.
-
-    run() -> str | Path | None:
-        Runs the project setup by executing each step until all steps are completed or the user
-        interrupts the process. Returns the path to the client secret JSON file if available,
-        otherwise returns None.
-    """
-
     def __init__(self):
         self.manual_steps = ManualSteps()
 
@@ -844,8 +815,11 @@ class GoogleApiProject:
         Calls the run() method to start the project setup and returns the path to the client secret
         JSON file if available.
 
-        :return: The path to the client secret JSON file if available, otherwise returns None.
-        :rtype: str | Path | None
+        Returns:
+            The path to the client secret JSON file if available, otherwise returns None.
+
+        Return type:
+            Union[str, Path, None]
         """
         return self.run()
 
@@ -854,10 +828,11 @@ class GoogleApiProject:
         Runs the project setup by executing each step until all steps are completed or the user
         interrupts the process.
 
-        Returns the path to the client secret JSON file if available, otherwise returns None.
+        Returns:
+            The path to the client secret JSON file if available, otherwise returns None.
 
-        :return: The path to the client secret JSON file if available, otherwise returns None.
-        :rtype: str | Path | None
+        Return type:
+            Union[str, Path, None]
         """
         client_secret_path: str | Path | None = None
         while not self.manual_steps.all_complete():
