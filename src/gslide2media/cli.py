@@ -545,44 +545,6 @@ class ArgParser(argparse.ArgumentParser):
             else Path(Path(".").resolve())
         )
 
-        # Fix --token-file
-        try:
-            if (
-                self.arg_namespace.token_file
-                and Path(self.arg_namespace.token_file).is_dir()
-            ):
-                self.arg_namespace.token_file = next(
-                    Path(self.arg_namespace.token_file).glob(
-                        self.arg_namespace.token_pattern
-                    ),
-                    None,
-                )
-
-            self.arg_namespace.token_file = (
-                Path(self.arg_namespace.token_file)
-                if self.arg_namespace.token_file
-                else next(
-                    self.arg_namespace.download_directory.glob(
-                        self.arg_namespace.token_pattern
-                    )
-                )
-            )
-        except StopIteration:
-            print(
-                (
-                    "token.json file not found that matches the pattern in the directory provided."
-                    f"  pattern: {self.arg_namespace.token_pattern}"
-                    f"  directory: {self.arg_namespace.download_directory}\n"
-                    "Attempting OAuth Flow.."
-                )
-            )
-
-            auth = AuthGoogle(
-                Path(self.arg_namespace.download_directory, "token.json"),
-                API_SCOPES,
-                self.arg_namespace.credentials_file,
-            )
-
     @staticmethod
     def check_allow_only_presentation_or_folder_not_both(folder_id, presentation_id):
         if folder_id and presentation_id:

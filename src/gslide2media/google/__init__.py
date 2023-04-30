@@ -96,7 +96,7 @@ class GoogleClient:
         self.options = options
 
         self.auth_google: AuthGoogle = AuthGoogle(
-            self.options.token_file, config.API_SCOPES
+            config.API_SCOPES
         )
         self.presentations_from_drive_folder: list = (
             self.get_presentations_from_drive_folder(folder_id=self.options.folder_id)

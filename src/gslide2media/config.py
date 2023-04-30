@@ -8,6 +8,6 @@ Variables:
 """
 from gslide2media.meta import Metadata
 
-META: Metadata | None = None
+META: Metadata
 MP4_IMAGE_FILE_FORMAT: str = "png"
 API_SCOPES: list[str] = ["https://www.googleapis.com/auth/drive"]

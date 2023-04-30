@@ -46,10 +46,10 @@ class ToMedia:
     def __init__(self, options: Options) -> None:
         config.META = Metadata.metadata_singleton_factory()
         self.ARGS = ArgParser(options)()
-        print(config.META)
-        print(self.ARGS)
-        raise SystemExit
         self.GOOGLE = GoogleClient(self.ARGS)
+        print("0", config.META.google_client_token)
+        print("1", self.ARGS)
+        raise SystemExit
 
 
         if self.ARGS.presentation_id:

@@ -29,9 +29,6 @@ class Options:
 
     download_directory: Path | str | None = None
 
-    token_pattern: str = "token.json"
-    token_file: Path | str | os.PathLike[str] = None  # type:ignore
-
     from_api: bool = False
     tool_auth_google_api_project: bool = False
     tool_google_auth_token: bool = False
@@ -40,11 +37,6 @@ class Options:
     def __post_init__(self) -> None:
         if not self.download_directory:
             self.download_directory = str(Path(".").resolve())
-
-        if not self.token_file:
-            self.token_file = str(
-                next(Path(self.download_directory).glob(self.token_pattern), None)
-            ) or str(Path(self.download_directory, self.token_file))
 
     def __call__(self, **kwargs):
         for k, v in kwargs.items():

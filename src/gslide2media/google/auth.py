@@ -1,17 +1,30 @@
-"""This module provides classes and functions for authenticating with Google APIs.
+"""
+google/auth.py
+
+This module provides classes and functions for authenticating with Google APIs, including Google
+Drive, Slide, and Session APIs.
 
 Classes:
     AuthGoogle -- A class for managing Google authentication credentials and services.
 
-Functions:
-    None
+Methods:
+    AuthGoogle.__init__ -- Initializes the AuthGoogle class by setting the necessary attributes and
+            calling the credentials fetching methods.
+    AuthGoogle.refresh_google_auth_creds -- Refreshes Google authentication credentials.
+    AuthGoogle.initiate_google_oauth_flow -- Initiates a Google OAuth flow for retrieving credentials.
+    AuthGoogle.fetch_credentials -- Fetches the credentials for the provided API scopes.
+    AuthGoogle.create_slides_service -- Creates and returns a Google Slides service object.
+    AuthGoogle.create_drive_service -- Creates and returns a Google Drive service object.
+    AuthGoogle.create_google_authorized_session -- Creates and returns a Google authorized session object.
+
+Attributes:
+    AuthGoogle.creds -- The Google authentication credentials.
+    AuthGoogle.slides_service -- The Google Slides service object.
+    AuthGoogle.drive_service -- The Google Drive service object.
+    AuthGoogle.google_authorized_session -- The authorized Google session object.
 
 """
-
-
-from typing import Optional
-
-from pathlib import Path
+import json
 
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
@@ -25,54 +38,52 @@ from gslide2media import config
 
 
 class AuthGoogle:
-    """Class for authenticating Google API requests.
+    """
+    A class for managing Google authentication credentials and services.
 
     Args:
-        token_file (Path, optional): Path to Google API token file. Defaults to None.
-        api_scopes (list[str]): List of Google API scopes.
-        credentials_file (Path, optional): Path to Google API credentials file. Defaults to None.
+        api_scopes (list[str]): A list of API scopes to authorize.
 
     Attributes:
-        creds (google.oauth2.credentials.Credentials): Google API credentials object.
-        slides_service (googleapiclient.discovery.Resource): Google Slides API service object.
-        drive_service (googleapiclient.discovery.Resource): Google Drive API service object.
-        google_authorized_session (google.auth.transport.requests.AuthorizedSession):
-                Authorized session object.
+        creds (Credentials): The Google authentication credentials.
+        slides_service (Resource): The Google Slides service object.
+        drive_service (Resource): The Google Drive service object.
+        google_authorized_session (AuthorizedSession): The authorized Google session object.
 
     Methods:
-        __call__(): Not yet implemented.
-
-    Returns:
-        None
+        __call__() -> None: Raises NotImplementedError.
+        refresh_google_auth_creds() -> Union[Credentials, None]: Refreshes Google authentication credentials.
+        initiate_google_oauth_flow(api_scopes: list[str]) -> Credentials: Initiates a Google OAuth flow for retrieving credentials.
+        fetch_credentials(api_scopes: list[str]) -> None: Fetches the credentials for the provided API scopes.
+        create_slides_service() -> build: Creates and returns a Google Slides service object.
+        create_drive_service() -> build: Creates and returns a Google Drive service object.
+        create_google_authorized_session() -> AuthorizedSession: Creates and returns an authorized Google session object.
     """
 
-    def __init__(self, token_file: Path | None, api_scopes: list[str]) -> None:
-        """Initialize AuthGoogle class.
+    def __init__(self, api_scopes: list[str]) -> None:
+        """Initializes an AuthGoogle instance with the provided API scopes.
 
         Args:
-            token_file (Path, optional): Path to Google API token file. Defaults to None.
-            api_scopes (list[str]): List of Google API scopes.
-            credentials_file (Path, optional):
-                    Path to Google API credentials file. Defaults to None.
+            api_scopes (list[str]): A list of API scopes required for authentication.
 
+        Returns:
+            None
+
+        Raises:
+            None
+
+        This method initializes an instance of AuthGoogle with the provided API scopes. It fetches the
+        Google authentication credentials, creates Google Slides and Drive services, and creates an
+        authorized session for accessing Google APIs. These properties are stored as instance variables.
         """
-        self.refresh_token_json_file(token_file, api_scopes)
+        self.fetch_credentials(api_scopes)
+        self.creds = Credentials.from_authorized_user_info(config.META.google_client_token)
 
         self.slides_service: Resource = self.create_slides_service()
         self.drive_service: Resource = self.create_drive_service()
         self.google_authorized_session: AuthorizedSession = (
             self.create_google_authorized_session()
         )
-
-    def __call__(self):
-        """Callable class that raises a NotImplementedError.
-
-        Raises:
-            NotImplementedError: When called, this method will always raise a NotImplementedError
-                with a message indicating that the '__call__' method of 'AuthGoogle' class
-                is not yet implemented.
-        """
-        raise NotImplementedError("AuthGoogle.__call__() not yet implemented")
 
     @property
     def creds(self):
@@ -192,107 +203,74 @@ class AuthGoogle:
         del self._google_authorized_session
 
     @staticmethod
-    def load_google_auth_creds_from_file(
-        token_file: Optional[Path], api_scopes: list[str]
-    ) -> Credentials | None:
-        """Load Google authorization credentials from a file.
-
-        Loads Google authorization credentials from the specified token file, which stores the
-        user's access and refresh tokens. If the token file does not exist, None is returned. The
-        loaded credentials can be used to authenticate requests to Google APIs.
-
-        Args:
-            token_file (Optional[Path]): Path to the token file that stores the authorization
-                credentials. If None, no credentials will be loaded and None will be returned.
-            api_scopes (list[str]): List of API scopes that the authorization credentials should
-                be granted access to.
-
-        Returns:
-            Credentials | None: The loaded authorization credentials as a `Credentials` object, or
-            None if the token file does not exist.
+    def refresh_google_auth_creds() -> dict | None:
         """
-
-        # The file token.json stores the user's access and refresh tokens, and is
-        # created automatically when the authorization flow completes for the first
-        # time.
-        token_file_path = Path(token_file)
-
-        return (
-            Credentials.from_authorized_user_file(token_file, api_scopes)
-            if token_file_path.exists()  # type:ignore
-            else None
-        )
-
-    @staticmethod
-    def refresh_google_auth_creds(creds: Credentials) -> Credentials | None:
-        """Refresh Google authorization credentials.
-
-        Refreshes the provided Google authorization credentials if they are expired and a refresh
-        token is available. The refreshed credentials are returned. If the provided credentials are
-        already valid and not expired, or if a refresh token is not available, the same credentials
-        are returned without modification.
-
-        Args:
-            creds (Credentials): The Google authorization credentials to refresh.
+        Refreshes the Google authorization credentials by obtaining a new access token using the
+        refresh token, if the provided credentials are expired and a refresh token is available.
 
         Returns:
-            Credentials | None: The refreshed authorization credentials as a `Credentials` object,
-            or None if the provided credentials are already valid and not expired, or if a refresh
-            token is not available.
+            Credentials | None: The refreshed authorization credentials as a dict object,
+            or None if `config.META.google_client_token` is None, or if the provided credentials are
+            already valid and not expired, or if a refresh token is not available.
         """
         # Using short-circuiting
-        if creds and not creds.valid and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        return creds
+        if config.META.google_client_token:
+            creds = Credentials.from_authorized_user_info(config.META.google_client_token)
+
+            if creds and not creds.valid and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+
+            return json.loads(Credentials.to_json(creds))
+        return None
 
     @staticmethod
-    def initiate_google_oauth_flow(
-        creds: Credentials, api_scopes: list[str]
-    ) -> Credentials:
-        """Initiate Google OAuth flow for authorization.
+    def initiate_google_oauth_flow(api_scopes: list[str]) -> dict:
+        """
+        Initiates the Google OAuth flow to obtain authorization credentials for a user.
 
-        Initiates the Google OAuth flow to obtain authorization credentials for a user. If the
-        provided credentials (`creds`) are not available or invalid, the flow is started using the
-        client secrets file (`credentials_file`) and the requested API scopes (`api_scopes`). The
-        user is prompted to authenticate and authorize the application using a local server flow
-        with a dynamically allocated port. Once the user completes the authorization flow, the
-        obtained credentials are returned.
-
-        a path to a client_secret.json for {credentials_file (Path | None)} can be downloaded from
-            https://console.cloud.google.com/apis/credentials?project=YOUR_PROJECT
+        This method initiates the Google OAuth flow to obtain authorization credentials. If the
+        provided credentials (`config.META.google_client_token`) are not available or invalid, the
+        flow is started using the client secrets file (`config.META.google_client_secret`) and the
+        requested API scopes (`api_scopes`). The user is prompted to authenticate and authorize the
+        application using a local server flow with a dynamically allocated port. Once the user
+        completes the authorization flow, the obtained credentials are returned.
 
         Args:
-            creds (Credentials): The Google authorization credentials, which may be None or invalid.
-            credentials_file (Path | None): The path to the client secrets file, or None if not
-            available. api_scopes (list[str]): The list of requested Google API scopes.
+            api_scopes (list[str]): A list of API scopes required for the authorization.
 
         Returns:
-            Credentials: The obtained Google authorization credentials as a `Credentials` object.
+            dict: The obtained authorization credentials info as a dict object.
+
+        Raises:
+            ValueError: If `config.META.google_client_token` is already set.
+
+        Note:
+            The client configuration should be set in `config.META.google_client_secret` before calling this method.
+            The client secrets file can be downloaded from the Google Cloud Console at:
+            https://console.cloud.google.com/apis/credentials?project=YOUR_PROJECT
         """
-        if not creds:
+        if not config.META.google_client_token:
             flow: "InstalledAppFlow" = InstalledAppFlow.from_client_config(
                 config.META.google_client_secret, api_scopes
             )
-            creds = flow.run_local_server(port=0)
-        return creds
+            return json.loads(Credentials.to_json(flow.run_local_server(port=0)))
+        return config.META.google_client_token
 
-    @staticmethod
-    def save_token_file_to_disk(creds: Credentials, token_file: Optional[Path]) -> None:
-        """Save Google authorization credentials to a token file on disk.
-
-        Saves the provided Google authorization credentials (`creds`) to a token file on disk
-        located at the specified path (`token_file`). The credentials are serialized to JSON format
-        using the `to_json()` method, and the resulting JSON string is written to the token file.
+    def fetch_credentials(self, api_scopes) -> None:
+        """
+        Fetches Google OAuth2 credentials and stores them in the `config.META.google_client_token`
+        configuration variable. This method first attempts to refresh the existing credentials using
+        the `refresh_google_auth_creds` static method. If the credentials are not valid or are not
+        available, the `initiate_google_oauth_flow` method is called to start a new OAuth flow to
+        obtain authorization credentials. Once the credentials are obtained, they are stored in
+        `config.META.google_client_token`.
 
         Args:
-            creds (Credentials): The Google authorization credentials to save.
-            token_file (Path | None): The path to the token file on disk, or None if not available.
-
-        Returns:
-            None
+            api_scopes (list[str]): A list of API scopes required for the authorization.
         """
-        with token_file.open("w") as token:  # type:ignore
-            token.write(creds.to_json())
+        config.META(google_client_token=self.refresh_google_auth_creds())
+        config.META(google_client_token=self.initiate_google_oauth_flow(api_scopes))
+        config.META(google_client_token=self.refresh_google_auth_creds())
 
     def create_slides_service(self) -> build:
         """Create and return an instance of Google Slides service.
@@ -328,15 +306,3 @@ class AuthGoogle:
             AuthorizedSession: An authorized session with Google services.
         """
         return AuthorizedSession(self.creds)
-
-    def refresh_token_json_file(self, token_file, api_scopes):
-        self.creds: Credentials | None = self.load_google_auth_creds_from_file(
-            token_file, api_scopes
-        )
-        self.creds = self.refresh_google_auth_creds(self.creds)
-        self.creds = self.initiate_google_oauth_flow(self.creds, api_scopes)
-
-        # needs to be twice to fill out creds attributes.
-        self.creds = self.refresh_google_auth_creds(self.creds)
-
-        self.save_token_file_to_disk(self.creds, token_file)
