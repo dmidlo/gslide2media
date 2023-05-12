@@ -5,8 +5,6 @@ from urllib.parse import urlparse
 from urllib.parse import urlunparse
 from urllib.parse import ParseResult as UrlParseResult
 
-from rich import print
-
 from gslide2media.enums import GoogleSlideExportFormats
 from gslide2media.enums import ImageExportFormats
 from gslide2media.enums import GoogleSlideExportTypes
@@ -44,14 +42,13 @@ class SlideExportUrls:
         )
 
     def set_resource_export_url_attributes(self):
-        # create a self._____  attribute for each format in the ExportFormats enum containing a url object.
         for _ in GoogleSlideExportFormats:
             setattr(
                 self,
                 _,
                 self.create_slide_export_url(self.presentation_id, self.slide_id, _),
             )
-            self.__annotations__[_.lower()] = UrlParseResult
+            self.__annotations__[_.lower()] = UrlParseResult  # pylint: disable=no-member
 
     def __iter__(self):
         self.index = 0
@@ -75,17 +72,17 @@ class SlideExportUrls:
             return DataPartial(self.get_image_bytes_from_url)(key=key)
         raise ValueError(f"{key} not a valid export format.")
 
-    def get_image_bytes_from_url(self, key: ImageExportFormats) -> Iterator[Image]:
+    def get_image_bytes_from_url(self, key: ImageExportFormats) -> Image:
         if key.lower() not in set(ImageExportFormats):
             raise KeyError(f"'{key}' is not a valid image format")
 
         url_obj = getattr(self, key)
 
-        bytes_content = config.GOOGLE.auth_google.google_authorized_session.get(
+        bytes_content = config.GOOGLE.auth_google.google_authorized_session.get(  # type:ignore
             urlunparse(url_obj)
         ).content
 
-        return Image(
+        return Image(  # type:ignore
             img_format=key,
             img_data=bytes_content,
             presentation_id=self.presentation_id,
@@ -153,10 +150,10 @@ class FetchSlideData:
         if export_type is GoogleSlideExportTypes.IMAGE:
             for _ in set(ImageExportFormats):
                 setattr(self, _, self.slide_image_urls[_])
-                self.__annotations__[_.lower()] = type(functools.partial)
+                self.__annotations__[_.lower()] = type(functools.partial)  # pylint: disable=no-member
         elif export_type is GoogleSlideExportTypes.DATA:
             setattr(self, "json", self.get_json_slide_data())
-            self.__annotations__["json"] = dict
+            self.__annotations__["json"] = dict  # pylint: disable=no-member
 
 
 @dataclass
@@ -164,10 +161,8 @@ class SlideData:
     slide_id: str
     presentation_id: str
     presentation_order: int
-    image_data: Iterator[Image]
-    json_data: Iterator[File]
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.slide_image_urls: SlideExportUrls = SlideExportUrls(
             self.slide_id, self.presentation_id, self.presentation_order
         )
@@ -236,7 +231,7 @@ class Slide:
     slide_duration_secs: int = 0
     slide_data: SlideData | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.slide_data: SlideData = SlideData(
             self.slide_id, self.presentation_id, self.presentation_order
         )
