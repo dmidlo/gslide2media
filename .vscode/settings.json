@@ -5,6 +5,7 @@
         "clientid",
         "creds",
         "fernet",
+        "getbuffer",
         "googleapiclient",
         "googleapis",
         "gslide",
@@ -14,6 +15,7 @@
         "namedtuples",
         "pageid",
         "pngs",
+        "pyav",
         "sourcery",
         "urandom"
     ],

@@ -1,5 +1,4 @@
 from typing import Iterator
-from typing import Optional
 from dataclasses import dataclass
 from urllib.parse import urlparse
 from urllib.parse import urlunparse
@@ -8,7 +7,6 @@ from io import BytesIO
 import functools
 
 import imageio
-from rich import print
 
 from gslide2media.slide import Slide
 from gslide2media.file import File
@@ -48,7 +46,7 @@ class PresentationExportUrls:
                 _,
                 self.create_presentation_export_url(self.presentation_id, _),
             )
-            self.__annotations__[_.lower()] = UrlParseResult
+            self.__annotations__[_.lower()] = UrlParseResult  # pylint: disable=no-member
 
     def __iter__(self):
         self.index = 0
@@ -78,12 +76,12 @@ class PresentationExportUrls:
 
         url_obj = getattr(self, key)
 
-        bytes_content = config.GOOGLE.auth_google.google_authorized_session.get(
+        bytes_content = config.GOOGLE.auth_google.google_authorized_session.get(  # type:ignore
             urlunparse(url_obj)
         ).content
 
         return File(
-            extension=key, file_data=bytes_content, presentation_id=self.presentation_id
+            extension=key, file_data=bytes_content, presentation_id=self.presentation_id  # type:ignore
         )
 
 
@@ -138,7 +136,7 @@ class FetchPresentationData:
 
         return DataPartial(func)(obj=self)
 
-    def get_mp4_bytes(self, slides: Iterator | None = None):
+    def get_mp4_bytes(self, slides: list | None | None = None):
         def func(obj, slides: list | None = None):
             output_params = {
                 "fps": config.ARGS.fps,
@@ -148,18 +146,18 @@ class FetchPresentationData:
                 "codec": "h264",
             }
 
-            frame_count = int(config.ARGS.mp4_slide_duration_secs * config.ARGS.fps)
+            frame_count = int(config.ARGS.mp4_slide_duration_secs * config.ARGS.fps)  # type:ignore
             video_frames = []
 
-            for slide in slides:
+            for slide in slides:  # type: ignore
                 for _ in range(frame_count):
                     image = imageio.imread(slide.get_bytes(ImageExportFormats.PNG))
                     video_frames.append(image)
 
             mp4_bytes = BytesIO()
-            imageio.v3.imwrite(mp4_bytes, video_frames, **output_params)
+            imageio.v3.imwrite(mp4_bytes, video_frames, **output_params)  # type:ignore
             return File(
-                extension="mp4",
+                extension=ExportFormats.MP4,
                 file_data=mp4_bytes,
                 presentation_id=obj.presentation_id,
             )
@@ -172,10 +170,10 @@ class FetchPresentationData:
                 GooglePresentationExportFormats.JSON
             }:
                 setattr(self, _, self.presentation_urls[_])
-                self.__annotations__[_.lower()] = type(functools.partial)
+                self.__annotations__[_.lower()] = type(functools.partial)  # pylint: disable=no-member
         elif export_type is GooglePresentationExportTypes.DATA:
             setattr(self, "json", self.get_json_presentation_data())
-            self.__annotations__["json"] = dict
+            self.__annotations__["json"] = dict  # pylint: disable=no-member
         elif export_type is GooglePresentationExportTypes.VIDEO:
             setattr(self, "mp4", self.get_mp4_bytes())
 
@@ -183,9 +181,6 @@ class FetchPresentationData:
 @dataclass
 class PresentationData:
     presentation_id: str
-    file_data: Iterator[File]
-    json_data: Iterator[File]
-    mp4_data: Iterator[File]
 
     def __post_init__(self):
         self.presentation_urls = PresentationExportUrls(self.presentation_id)
@@ -271,12 +266,12 @@ class Presentation:
 
     _slides: list | None = None
     _presentation_data: PresentationData | None = None
-    _instances = {}
+    _instances = {}  # type:ignore
 
     def __new__(cls, *args, **kwargs):
         instance_id = tuple(
             kwargs[_] if hasattr(kwargs, _) else "batch"
-            for _ in {"presentation_id", "parent"}
+            for _ in ["presentation_id", "parent"]
         )
         if instance_id not in cls._instances:
             cls._instances[instance_id] = super(cls, cls).__new__(cls)
@@ -335,23 +330,23 @@ class Presentation:
         for key in key_formats:
             match key:
                 case key if key in set(ImageExportFormats):
-                    for _ in self.slides:
+                    for _ in self.slides:  # type:ignore
                         _.save_to_file(key)
                 case key if key in set(GooglePresentationExportFormats) - {
                     GooglePresentationExportFormats.JSON
                 }:
                     file = convert_partial_to_bytes(
-                        self.presentation_data.file_data, key
+                        self.presentation_data.file_data, key  # type:ignore
                     )
                 case key if key == ExportFormats.JSON:
                     file = convert_partial_to_bytes(
-                        self.presentation_data.json_data, key
+                        self.presentation_data.json_data, key  # type:ignore
                     )
-                    for _ in self.slides:
+                    for _ in self.slides:  # type:ignore
                         _.save_to_file(key)
                 case key if key == ExportFormats.MP4:
                     file = convert_partial_to_bytes(
-                        self.presentation_data.mp4_data, key
+                        self.presentation_data.mp4_data, key  # type:ignore
                     )
                 case _:
                     raise ValueError(f"{key} is not a valid file type.")
@@ -380,11 +375,11 @@ class Presentation:
                 raise ValueError(f"{key} is not a valid file type.")
 
     @property
-    def slides(self) -> Iterator:
+    def slides(self) -> list | None:
         return self._slides
 
     @slides.setter
-    def slides(self, slides: Iterator):
+    def slides(self, slides: list | None):
         self._slides = slides
 
     @slides.deleter
@@ -392,11 +387,11 @@ class Presentation:
         del self._slides
 
     @property
-    def presentation_data(self) -> Iterator:
+    def presentation_data(self) -> PresentationData | None:
         return self._presentation_data
 
     @presentation_data.setter
-    def presentation_data(self, presentation_data: Iterator):
+    def presentation_data(self, presentation_data: PresentationData | None):
         self._presentation_data = presentation_data
 
     @presentation_data.deleter
