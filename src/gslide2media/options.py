@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-import os
 from pathlib import Path
 
 
@@ -42,5 +41,5 @@ class Options:
             self.download_directory = str(Path(".").resolve())
 
     def __call__(self, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)
+        for key, value in kwargs.items():
+            setattr(self, key, value)
