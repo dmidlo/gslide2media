@@ -30,8 +30,8 @@ class Metadata:
     options_history: list[Options] = field(default_factory=list[Options])
 
     def __call__(self, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)
+        for key, value in kwargs.items():
+            setattr(self, key, value)
         self.write()
 
     def __new__(cls):
