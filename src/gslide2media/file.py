@@ -20,12 +20,12 @@ class File:
 
     _path: Path | None = None
     _working_dir: Path | None = None
-    _instances = {}
+    _instances = {}  # type:ignore
 
     def __new__(cls, *args, **kwargs):
         instance_id = tuple(
             kwargs[_] if hasattr(kwargs, _) else "None"
-            for _ in {"extension", "presentation_id", "slide_id"}
+            for _ in ["extension", "presentation_id", "slide_id"]
         )
         if instance_id not in cls._instances:
             cls._instances[instance_id] = super(cls, cls).__new__(cls)
