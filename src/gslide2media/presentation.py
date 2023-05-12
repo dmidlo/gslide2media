@@ -33,7 +33,6 @@ class PresentationExportUrls:
     def create_presentation_export_url(
         presentation_id: str, export_format: GooglePresentationExportFormats
     ) -> UrlParseResult:
-
         return urlparse(
             "https://docs.google.com/presentation/d/"
             f"{presentation_id}"
@@ -83,7 +82,10 @@ class PresentationExportUrls:
             urlunparse(url_obj)
         ).content
 
-        return File(extension=key, file_data=bytes_content, presentation_id=self.presentation_id)
+        return File(
+            extension=key, file_data=bytes_content, presentation_id=self.presentation_id
+        )
+
 
 @dataclass
 class FetchPresentationData:
@@ -97,23 +99,26 @@ class FetchPresentationData:
     def __iter__(self):
         match self.export_type:
             case GooglePresentationExportTypes.FILE:
-                self.attributes = list(set(GooglePresentationExportFormats) - {GooglePresentationExportFormats.JSON})
+                self.attributes = list(
+                    set(GooglePresentationExportFormats)
+                    - {GooglePresentationExportFormats.JSON}
+                )
             case GooglePresentationExportTypes.DATA:
                 self.attributes = [GooglePresentationExportFormats.JSON]
             case GooglePresentationExportTypes.VIDEO:
                 self.attributes = [ExportFormats.MP4]
         self.index = 0
         return self
-    
+
     def __next__(self):
         if self.index >= len(self.attributes):
             raise StopIteration
-        
+
         attr_name = self.attributes[self.index]
         attr_value = getattr(self, attr_name)
         self.index += 1
         return (attr_name, attr_value)
-    
+
     def __getitem__(self, key):
         return getattr(self, key)
 
@@ -122,18 +127,25 @@ class FetchPresentationData:
 
     def get_json_presentation_data(self):
         def func(obj):
-            presentation_data = config.GOOGLE.get_google_slides_presentation(obj.presentation_id)
-            return File(extension="json", file_data=presentation_data, presentation_id=obj.presentation_id)
+            presentation_data = config.GOOGLE.get_google_slides_presentation(
+                obj.presentation_id
+            )
+            return File(
+                extension="json",
+                file_data=presentation_data,
+                presentation_id=obj.presentation_id,
+            )
+
         return DataPartial(func)(obj=self)
 
-    def get_mp4_bytes(self, slides: Iterator | None=None):
-        def func(obj, slides: list | None=None):
+    def get_mp4_bytes(self, slides: Iterator | None = None):
+        def func(obj, slides: list | None = None):
             output_params = {
-                "fps": config.ARGS.fps, 
+                "fps": config.ARGS.fps,
                 "extension": ".mp4",
                 "format_hint": ".mp4",
                 "plugin": "pyav",
-                "codec": "h264"
+                "codec": "h264",
             }
 
             frame_count = int(config.ARGS.mp4_slide_duration_secs * config.ARGS.fps)
@@ -146,12 +158,19 @@ class FetchPresentationData:
 
             mp4_bytes = BytesIO()
             imageio.v3.imwrite(mp4_bytes, video_frames, **output_params)
-            return File(extension="mp4", file_data=mp4_bytes, presentation_id=obj.presentation_id)
+            return File(
+                extension="mp4",
+                file_data=mp4_bytes,
+                presentation_id=obj.presentation_id,
+            )
+
         return DataPartial(func)
 
     def create_self_attributes(self, export_type: GooglePresentationExportTypes):
         if export_type is GooglePresentationExportTypes.FILE:
-            for _ in set(GooglePresentationExportFormats) - {GooglePresentationExportFormats.JSON}:
+            for _ in set(GooglePresentationExportFormats) - {
+                GooglePresentationExportFormats.JSON
+            }:
                 setattr(self, _, self.presentation_urls[_])
                 self.__annotations__[_.lower()] = type(functools.partial)
         elif export_type is GooglePresentationExportTypes.DATA:
@@ -160,7 +179,7 @@ class FetchPresentationData:
         elif export_type is GooglePresentationExportTypes.VIDEO:
             setattr(self, "mp4", self.get_mp4_bytes())
 
-    
+
 @dataclass
 class PresentationData:
     presentation_id: str
@@ -170,34 +189,46 @@ class PresentationData:
 
     def __post_init__(self):
         self.presentation_urls = PresentationExportUrls(self.presentation_id)
-        self.file_data = FetchPresentationData(self.presentation_id, self.presentation_urls, GooglePresentationExportTypes.FILE)
-        self.json_data = FetchPresentationData(self.presentation_id, self.presentation_urls, GooglePresentationExportTypes.DATA)
-        self.mp4_data = FetchPresentationData(self.presentation_id, self.presentation_urls, GooglePresentationExportTypes.VIDEO)
+        self.file_data = FetchPresentationData(
+            self.presentation_id,
+            self.presentation_urls,
+            GooglePresentationExportTypes.FILE,
+        )
+        self.json_data = FetchPresentationData(
+            self.presentation_id,
+            self.presentation_urls,
+            GooglePresentationExportTypes.DATA,
+        )
+        self.mp4_data = FetchPresentationData(
+            self.presentation_id,
+            self.presentation_urls,
+            GooglePresentationExportTypes.VIDEO,
+        )
 
     def __iter__(self):
         self.index = 0
         self.attributes = ["file_data", "json_data", "mp4_data"]
         return self
-    
+
     def __next__(self):
         if self.index >= len(self.attributes):
             raise StopIteration
-        
+
         attr_name = self.attributes[self.index]
         attr_value = getattr(self, attr_name)
         self.index += 1
         return (attr_name, attr_value)
-    
+
     def __getitem__(self, key):
         return getattr(self, key)
-    
+
     def __setitem__(self, key, value):
         setattr(self, key, value)
 
     @property
     def file_data(self):
         return self._file_data
-    
+
     @file_data.setter
     def file_data(self, file_data):
         self._file_data = file_data
@@ -209,7 +240,7 @@ class PresentationData:
     @property
     def json_data(self):
         return self._json_data
-    
+
     @json_data.setter
     def json_data(self, json_data):
         self._json_data = json_data
@@ -221,7 +252,7 @@ class PresentationData:
     @property
     def mp4_data(self):
         return self._mp4_data
-    
+
     @mp4_data.setter
     def mp4_data(self, mp4_data):
         self._mp4_data = mp4_data
@@ -243,8 +274,10 @@ class Presentation:
     _instances = {}
 
     def __new__(cls, *args, **kwargs):
-
-        instance_id = tuple(kwargs[_] if hasattr(kwargs, _) else "batch" for _ in {"presentation_id", "parent"})
+        instance_id = tuple(
+            kwargs[_] if hasattr(kwargs, _) else "batch"
+            for _ in {"presentation_id", "parent"}
+        )
         if instance_id not in cls._instances:
             cls._instances[instance_id] = super(cls, cls).__new__(cls)
 
@@ -253,21 +286,28 @@ class Presentation:
     def __post_init__(self):
         if self.presentation_id:
             self.presentation_data = PresentationData(self.presentation_id)
-            self.presentation_data.json_data.json = convert_partial_to_bytes(self.presentation_data.json_data, ExportFormats.JSON)
-            self.presentation_name = self.presentation_data.json_data.json.file_data["title"].strip().replace(" ", "-")
+            self.presentation_data.json_data.json = convert_partial_to_bytes(
+                self.presentation_data.json_data, ExportFormats.JSON
+            )
+            self.presentation_name = (
+                self.presentation_data.json_data.json.file_data["title"]
+                .strip()
+                .replace(" ", "-")
+            )
         else:
             self.presentation_id = "batch"
             self.presentation_data = PresentationData(self.presentation_id)
 
             if not self.presentation_name:
                 self.presentation_name = "batch"
-        
+
         self.populate_slides()
-        self.presentation_data.mp4_data.mp4 = self.presentation_data.mp4_data.mp4(obj=self.presentation_data.mp4_data, slides=self.slides)
+        self.presentation_data.mp4_data.mp4 = self.presentation_data.mp4_data.mp4(
+            obj=self.presentation_data.mp4_data, slides=self.slides
+        )
 
     def populate_slides(self):
         if self.slide_ids is None:
-
             self.slides = [
                 Slide(
                     slide_id=slide["objectId"],
@@ -275,10 +315,20 @@ class Presentation:
                     presentation_order=i,
                     slide_duration_secs=config.ARGS.mp4_slide_duration_secs,
                 )
-                for i, slide in enumerate(self.presentation_data.json_data.json.file_data.get("slides"))
+                for i, slide in enumerate(
+                    self.presentation_data.json_data.json.file_data.get("slides")
+                )
             ]
         else:
-            self.slides = [Slide(slide_id=_[1], presentation_id=_[0], presentation_order=i, slide_duration_secs=config.ARGS.mp4_slide_duration_secs) for i, _ in enumerate(self.slide_ids)]
+            self.slides = [
+                Slide(
+                    slide_id=_[1],
+                    presentation_id=_[0],
+                    presentation_order=i,
+                    slide_duration_secs=config.ARGS.mp4_slide_duration_secs,
+                )
+                for i, _ in enumerate(self.slide_ids)
+            ]
 
     def save_to_file(self, key_formats: set):
         file = None
@@ -287,14 +337,22 @@ class Presentation:
                 case key if key in set(ImageExportFormats):
                     for _ in self.slides:
                         _.save_to_file(key)
-                case key if key in set(GooglePresentationExportFormats) - {GooglePresentationExportFormats.JSON}:
-                    file = convert_partial_to_bytes(self.presentation_data.file_data, key)
+                case key if key in set(GooglePresentationExportFormats) - {
+                    GooglePresentationExportFormats.JSON
+                }:
+                    file = convert_partial_to_bytes(
+                        self.presentation_data.file_data, key
+                    )
                 case key if key == ExportFormats.JSON:
-                    file = convert_partial_to_bytes(self.presentation_data.json_data, key)
+                    file = convert_partial_to_bytes(
+                        self.presentation_data.json_data, key
+                    )
                     for _ in self.slides:
                         _.save_to_file(key)
                 case key if key == ExportFormats.MP4:
-                    file = convert_partial_to_bytes(self.presentation_data.mp4_data, key)
+                    file = convert_partial_to_bytes(
+                        self.presentation_data.mp4_data, key
+                    )
                 case _:
                     raise ValueError(f"{key} is not a valid file type.")
             if file:
@@ -304,19 +362,27 @@ class Presentation:
         match key:
             case key if key in set(ImageExportFormats):
                 return (slide.get_bytes(key) for slide in self.slides)
-            case key if key in set(GooglePresentationExportFormats) - {GooglePresentationExportFormats.JSON}:
-                return convert_partial_to_bytes(self.presentation_data.file_data, key).file_data
+            case key if key in set(GooglePresentationExportFormats) - {
+                GooglePresentationExportFormats.JSON
+            }:
+                return convert_partial_to_bytes(
+                    self.presentation_data.file_data, key
+                ).file_data
             case key if key == ExportFormats.JSON:
-                return convert_partial_to_bytes(self.presentation_data.json_data, key).file_data
+                return convert_partial_to_bytes(
+                    self.presentation_data.json_data, key
+                ).file_data
             case key if key == ExportFormats.MP4:
-                return convert_partial_to_bytes(self.presentation_data.mp4_data, key).file_data.getbuffer()
+                return convert_partial_to_bytes(
+                    self.presentation_data.mp4_data, key
+                ).file_data.getbuffer()
             case _:
                 raise ValueError(f"{key} is not a valid file type.")
-            
+
     @property
     def slides(self) -> Iterator:
         return self._slides
-    
+
     @slides.setter
     def slides(self, slides: Iterator):
         self._slides = slides
@@ -328,7 +394,7 @@ class Presentation:
     @property
     def presentation_data(self) -> Iterator:
         return self._presentation_data
-    
+
     @presentation_data.setter
     def presentation_data(self, presentation_data: Iterator):
         self._presentation_data = presentation_data

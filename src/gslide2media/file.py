@@ -23,7 +23,10 @@ class File:
     _instances = {}
 
     def __new__(cls, *args, **kwargs):
-        instance_id = tuple(kwargs[_] if hasattr(kwargs, _) else "None" for _ in {"extension", "presentation_id", "slide_id"})
+        instance_id = tuple(
+            kwargs[_] if hasattr(kwargs, _) else "None"
+            for _ in {"extension", "presentation_id", "slide_id"}
+        )
         if instance_id not in cls._instances:
             cls._instances[instance_id] = super(cls, cls).__new__(cls)
 
@@ -62,14 +65,13 @@ class File:
         else:
             data = self.file_data
 
-
         with self.path.open("wb") as file:
             file.write(data)
 
     @property
     def path(self):
         return self._path
-    
+
     @path.setter
     def path(self, path: Path):
         self._path = path
@@ -81,7 +83,7 @@ class File:
     @property
     def working_dir(self):
         return self._working_dir
-    
+
     @working_dir.setter
     def working_dir(self, working_dir: Path):
         self._working_dir = working_dir

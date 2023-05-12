@@ -19,7 +19,13 @@ class Image:
     is_composite: bool = False
 
     def to_file(self):
-        return File(extension=self.img_format, file_data=self.img_data, presentation_id=self.presentation_id, slide_id=self.slide_id, presentation_order=self.presentation_order)
+        return File(
+            extension=self.img_format,
+            file_data=self.img_data,
+            presentation_id=self.presentation_id,
+            slide_id=self.slide_id,
+            presentation_order=self.presentation_order,
+        )
 
     def to_png(self):
         match self.img_format:
@@ -45,7 +51,9 @@ class Image:
             case ImageExportFormats.JPEG:
                 with PILImage.open(BytesIO(self.img_data)) as img:
                     with BytesIO() as buffer:
-                        img.resize((config.ARGS.screen_width, config.ARGS.screen_height))
+                        img.resize(
+                            (config.ARGS.screen_width, config.ARGS.screen_height)
+                        )
                         img.save(buffer, format="PNG")
                         image_data = buffer.getvalue()
                 return Image(

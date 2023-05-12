@@ -33,6 +33,7 @@ class GooglePresentationExportTypes(StrEnum):
     VIDEO = auto()
     DATA = auto()
 
+
 class ExportFormats(StrEnum):
     PPTX = auto()
     PDF = auto()

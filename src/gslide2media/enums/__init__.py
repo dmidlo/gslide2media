@@ -15,5 +15,5 @@ __all__ = [
     "GoogleSlideExportTypes",
     "ImageExportFormats",
     "ExportFormats",
-    "DriveTypes"
+    "DriveTypes",
 ]

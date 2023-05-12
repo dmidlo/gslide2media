@@ -145,7 +145,7 @@ class GoogleClient:
             .execute()
         )
         return results.get("files", [])
-    
+
     def get_shared_folders(self):
         query = "mimeType='application/vnd.google-apps.folder' and sharedWithMe"
         results = (
@@ -174,14 +174,15 @@ class GoogleClient:
     def get_presentation_name(self, presentation_id: str) -> str:
         presentation: dict = self.get_google_slides_presentation(presentation_id)
         return presentation["title"].strip().replace(" ", "-")
-    
+
     def get_parent_folder_of_google_file(self, file_resource_id: str) -> str | None:
         try:
             # Call the Drive API to get the metadata of the presentation file
-            file_metadata = self.auth_google.drive_service.files().get(
-                fileId=file_resource_id,
-                fields="parents"
-            ).execute()
+            file_metadata = (
+                self.auth_google.drive_service.files()
+                .get(fileId=file_resource_id, fields="parents")
+                .execute()
+            )
 
             # Extract the IDs of the parent folders
             parent_folder_ids = file_metadata.get("parents", [])

@@ -45,32 +45,62 @@ class DataPartial:
         dict_data = {self.key: create_partial(self.fmt_fnc, **kwargs)}
 
         return self.partial(**dict_data)
-    
+
+
 def convert_partial_to_bytes(obj, key):
     if hasattr(obj[key], "_fields"):
         obj[key] = obj[key][0]()
     return obj[key]
 
 
-def dataclass_unique_instance_cache(cls=None, /, *, init=True, repr=True, eq=True, order=False,
-              unsafe_hash=False, frozen=False, match_args=True,
-              kw_only=True, slots=True, weakref_slot=False, id_keys: List[str] | None = None):
-
+def dataclass_unique_instance_cache(
+    cls=None,
+    /,
+    *,
+    init=True,
+    repr=True,
+    eq=True,
+    order=False,
+    unsafe_hash=False,
+    frozen=False,
+    match_args=True,
+    kw_only=True,
+    slots=True,
+    weakref_slot=False,
+    id_keys: List[str] | None = None,
+):
     def wrap(cls):
-        cls = _process_class(cls, init, repr, eq, order, unsafe_hash,
-                             frozen, match_args, kw_only, slots,
-                             weakref_slot)
-        
-        id_keys_is_list_of_strings = bool(id_keys) and isinstance(id_keys, list) and all(isinstance(_, str) for _ in id_keys)
-        id_keys_are_valid = all(_ if _ in set(cls.__dataclass_fields__) else False for _ in id_keys)
+        cls = _process_class(
+            cls,
+            init,
+            repr,
+            eq,
+            order,
+            unsafe_hash,
+            frozen,
+            match_args,
+            kw_only,
+            slots,
+            weakref_slot,
+        )
+
+        id_keys_is_list_of_strings = (
+            bool(id_keys)
+            and isinstance(id_keys, list)
+            and all(isinstance(_, str) for _ in id_keys)
+        )
+        id_keys_are_valid = all(
+            _ if _ in set(cls.__dataclass_fields__) else False for _ in id_keys
+        )
 
         if not id_keys_is_list_of_strings or not id_keys_are_valid:
-            raise ValueError("dataclass_unique_instance_cache: requires [list] of 'params' to use as identifiers.")
-        
+            raise ValueError(
+                "dataclass_unique_instance_cache: requires [list] of 'params' to use as identifiers."
+            )
+
         cls._instances = {}
 
         def new(cls, *args, **kwargs):
-
             instance_id = tuple(kwargs[_] for _ in id_keys)
             if instance_id not in cls._instances:
                 cls._instances[instance_id] = super(cls, cls).__new__(cls)
@@ -82,5 +112,5 @@ def dataclass_unique_instance_cache(cls=None, /, *, init=True, repr=True, eq=Tru
 
     if cls is None:
         return wrap
-    
+
     return wrap(cls)

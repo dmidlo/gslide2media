@@ -85,7 +85,13 @@ class SlideExportUrls:
             urlunparse(url_obj)
         ).content
 
-        return Image(img_format=key, img_data=bytes_content, presentation_id=self.presentation_id, slide_id=self.slide_id, presentation_order=self.presentation_order)
+        return Image(
+            img_format=key,
+            img_data=bytes_content,
+            presentation_id=self.presentation_id,
+            slide_id=self.slide_id,
+            presentation_order=self.presentation_order,
+        )
 
 
 @dataclass
@@ -133,7 +139,13 @@ class FetchSlideData:
 
             [slide_data] = [_ for _ in slides if _["objectId"] == obj.slide_id]
 
-            return File(extension="json", file_data=slide_data, presentation_id=obj.presentation_id, slide_id=obj.slide_id, presentation_order=obj.presentation_order)
+            return File(
+                extension="json",
+                file_data=slide_data,
+                presentation_id=obj.presentation_id,
+                slide_id=obj.slide_id,
+                presentation_order=obj.presentation_order,
+            )
 
         return DataPartial(func)(obj=self)
 
@@ -225,9 +237,11 @@ class Slide:
     slide_data: SlideData | None = None
 
     def __post_init__(self):
-        self.slide_data: SlideData = SlideData(self.slide_id, self.presentation_id, self.presentation_order)
+        self.slide_data: SlideData = SlideData(
+            self.slide_id, self.presentation_id, self.presentation_order
+        )
 
-    def __call__(self, presentation_order: int | None=None):
+    def __call__(self, presentation_order: int | None = None):
         if presentation_order:
             self.presentation_order = presentation_order
         return self
@@ -268,6 +282,8 @@ class Slide:
                     return self.slide_data.image_data.jpeg.img_data
 
             case key if key in {"json"}:
-                return convert_partial_to_bytes(self.slide_data.json_data, key).file_data
+                return convert_partial_to_bytes(
+                    self.slide_data.json_data, key
+                ).file_data
             case _:
                 raise ValueError(f"{_} is an invalid file type.")

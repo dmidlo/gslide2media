@@ -21,12 +21,10 @@ class ToMedia:
         config.ARGS = ArgParser(options)()
         config.GOOGLE = GoogleClient(config.ARGS)
 
-
-
         # folder_id = "0B9ytToO3rm0mVW43MmttZTRJc2c"
         # folder = Folder(folder_id=folder_id)
         # folder.save_to_file(set(ExportFormats)
-        
+
         # presentation_id = "1oenPoz35QxrfrSrHeLR-NN5EDI3Nr5UuTbhOID02DsQ"
         # presentation = Presentation(presentation_id=presentation_id)
         # presentation.save_to_file(set(ExportFormats))
