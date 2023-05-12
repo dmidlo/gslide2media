@@ -9,13 +9,10 @@ Functions:
 import functools
 from typing import NamedTuple
 from typing import Callable
-from typing import Tuple, List
-from dataclasses import dataclass, field, _process_class
-
-from rich import print
+from typing import List
+from dataclasses import dataclass, _process_class  # type:ignore
 
 from gslide2media.enums import ExportFormats
-from gslide2media.file import File
 
 
 def partial_decorator(*args, **kwargs):
@@ -28,8 +25,7 @@ def partial_decorator(*args, **kwargs):
 
 
 def create_partial(func, *args, **kwargs):
-    partial_func = partial_decorator(*args, **kwargs)(func)
-    return partial_func
+    return partial_decorator(*args, **kwargs)(func)
 
 
 @dataclass
@@ -103,7 +99,7 @@ def dataclass_unique_instance_cache(
         def new(cls, *args, **kwargs):
             instance_id = tuple(kwargs[_] for _ in id_keys)
             if instance_id not in cls._instances:
-                cls._instances[instance_id] = super(cls, cls).__new__(cls)
+                cls._instances[instance_id] = super(cls, cls).__new__(cls)  # pylint: disable=no-value-for-parameter
 
             return cls._instances[instance_id]
 
