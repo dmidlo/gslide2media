@@ -89,7 +89,8 @@ class Image:
                 img.resize((config.ARGS.screen_width, config.ARGS.screen_height))
                 img.save(buffer, format="JPEG", quality=config.ARGS.jpeg_quality)
                 bytes_data = buffer.getvalue()
-        return Image(
+
+        return Image(  # type:ignore
             img_format=ImageExportFormats.JPEG,
             img_data=bytes_data,
             presentation_id=self.presentation_id,
