@@ -15,6 +15,7 @@ inquirerpy = "^0.3.4"
 pyperclip = "^1.8.2"
 pyyaml = "^6.0"
 cryptography = "^40.0.2"
+av = "^10.0.0"
 
 [tool.poetry.scripts]
 gslide2media = "gslide2media.__main__:main"

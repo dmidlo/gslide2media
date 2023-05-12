@@ -5,11 +5,13 @@ from gslide2media.utils import DataPartial
 from gslide2media.utils import convert_partial_to_bytes
 from gslide2media import config
 
-@dataclass(slots=True)
+@dataclass(slots=True, kw_only=True)
 class Folder:
     folder_id: str | None = None
     folder_name: str | None = None
     parent: str | None = None
+    presentation_ids: list[str] | None = None
+    folder_ids: list[str] | None = None
 
     _root_instance = None
     _instances = {}
@@ -19,18 +21,24 @@ class Folder:
     _attributes: list | None = None
     _index: int | None = None
 
-    def __new__(cls, folder_id=None, folder_name=None, parent=None):
-        if folder_id is None:
+    def __new__(cls, folder_id=None, folder_name=None, parent=None, presentation_ids=None, folder_ids=None):
+
+
+        if folder_id is None and presentation_ids is None and folder_ids is None:
             if cls._root_instance is None:
                 cls._root_instance = super(cls, cls).__new__(cls)
             return cls._root_instance
         else:
+            
+            instance_id = "batch" if presentation_ids or folder_ids else folder_id
+
             if folder_id not in cls._instances:
-                cls._instances[folder_id] = super(cls, cls).__new__(cls)
-                cls._instances[folder_id].folder_id = folder_id
-                cls._instances[folder_id].folder_name = folder_name
-                cls._instances[folder_id].parent = parent
-            return cls._instances[folder_id]
+                cls._instances[instance_id] = super(cls, cls).__new__(cls)
+                cls._instances[instance_id].folder_id = folder_id
+                cls._instances[instance_id].folder_name = folder_name
+                cls._instances[instance_id].parent = parent
+                cls._instances[instance_id].presentation_ids = presentation_ids
+            return cls._instances[instance_id]
         
     def __post_init__(self):
         if self is self.get_root_folder():
@@ -39,6 +47,16 @@ class Folder:
             self.folders = self.get_folders_in_root_partial()
             self.presentations = self.get_presentations_in_root_partial()
             self.drive_folder_tree = self.walk()
+        elif self.presentation_ids or self.folder_ids:
+            if not self.folder_id:
+                self.folder_id = "batch"
+            if not self.folder_name:
+                self.folder_name = "batch"
+            if not self.parent:
+                self.parent = "batch"
+
+            self.folders = self.get_folders_from_ids_list()
+            self.presentations = self.get_presentations_from_ids_list()
         else:
             if not self.folder_name:
                 self.folder_name = config.GOOGLE.get_folder_name(self.folder_id)
@@ -71,7 +89,7 @@ class Folder:
         def func(obj):
             folders_list = config.GOOGLE.get_folders_from_drive_folder(obj.folder_id)
 
-            return (Folder(_["id"], _["name"], obj.folder_id) for _ in folders_list)
+            return (Folder(folder_id=_["id"], folder_name=_["name"], parent=obj.folder_id) for _ in folders_list)
         return DataPartial(func)(obj=self)
     
     def get_presentations_partial(self):
@@ -86,7 +104,7 @@ class Folder:
             folders_list = config.GOOGLE.get_folders_in_root()
             folders_list.extend(config.GOOGLE.get_shared_folders())
             
-            return (Folder(_["id"], _["name"], "root") for _ in folders_list)
+            return (Folder(folder_id=_["id"], folder_name=_["name"], parent="root") for _ in folders_list)
         
         return DataPartial(func)()
     
@@ -98,6 +116,16 @@ class Folder:
             return (Presentation(presentation_id=_["id"], parent="root") for _ in presentation_list)
         
         return DataPartial(func)()
+    
+    def get_folders_from_ids_list(self):
+        def func(obj):
+            return (Folder(folder_id=_, folder_name=config.GOOGLE.get_folder_name(_), parent=config.GOOGLE.get_parent_folder_of_google_file(_)) for _ in obj.folder_ids)
+        return DataPartial(func)(obj=self)
+    
+    def get_presentations_from_ids_list(self):
+        def func(obj):
+            return (Presentation(presentation_id=_, parent=config.GOOGLE.get_parent_folder_of_google_file(_)) for _ in obj.presentation_ids)
+        return DataPartial(func)(obj=self)
 
     @classmethod
     def walk(cls):

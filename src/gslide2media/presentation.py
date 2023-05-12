@@ -233,22 +233,40 @@ class PresentationData:
 
 @dataclass_unique_instance_cache(id_keys=["presentation_id", "parent"])
 class Presentation:
-    presentation_id: str
+    presentation_id: str | None = None
     parent: str | None = None
-    slides: list | None = None
-    presentation_data: PresentationData | None = None
+    slide_ids: list[tuple[str, str]] | None = None
     presentation_name: str | None = None
 
-    def __post_init__(self):
+    _slides: list | None = None
+    _presentation_data: PresentationData | None = None
+    _instances = {}
 
-        self.presentation_data = PresentationData(self.presentation_id)
-        self.presentation_data.json_data.json = convert_partial_to_bytes(self.presentation_data.json_data, ExportFormats.JSON)
-        self.presentation_name = self.presentation_data.json_data.json.file_data["title"].strip().replace(" ", "-")
+    def __new__(cls, *args, **kwargs):
+
+        instance_id = tuple(kwargs[_] if hasattr(kwargs, _) else "batch" for _ in {"presentation_id", "parent"})
+        if instance_id not in cls._instances:
+            cls._instances[instance_id] = super(cls, cls).__new__(cls)
+
+        return cls._instances[instance_id]
+
+    def __post_init__(self):
+        if self.presentation_id:
+            self.presentation_data = PresentationData(self.presentation_id)
+            self.presentation_data.json_data.json = convert_partial_to_bytes(self.presentation_data.json_data, ExportFormats.JSON)
+            self.presentation_name = self.presentation_data.json_data.json.file_data["title"].strip().replace(" ", "-")
+        else:
+            self.presentation_id = "batch"
+            self.presentation_data = PresentationData(self.presentation_id)
+
+            if not self.presentation_name:
+                self.presentation_name = "batch"
+        
         self.populate_slides()
         self.presentation_data.mp4_data.mp4 = self.presentation_data.mp4_data.mp4(obj=self.presentation_data.mp4_data, slides=self.slides)
 
     def populate_slides(self):
-        if self.slides is None:
+        if self.slide_ids is None:
 
             self.slides = [
                 Slide(
@@ -259,6 +277,8 @@ class Presentation:
                 )
                 for i, slide in enumerate(self.presentation_data.json_data.json.file_data.get("slides"))
             ]
+        else:
+            self.slides = [Slide(slide_id=_[1], presentation_id=_[0], presentation_order=i, slide_duration_secs=config.ARGS.mp4_slide_duration_secs) for i, _ in enumerate(self.slide_ids)]
 
     def save_to_file(self, key_formats: set):
         file = None
@@ -292,3 +312,27 @@ class Presentation:
                 return convert_partial_to_bytes(self.presentation_data.mp4_data, key).file_data.getbuffer()
             case _:
                 raise ValueError(f"{key} is not a valid file type.")
+            
+    @property
+    def slides(self) -> Iterator:
+        return self._slides
+    
+    @slides.setter
+    def slides(self, slides: Iterator):
+        self._slides = slides
+
+    @slides.deleter
+    def slides(self):
+        del self._slides
+
+    @property
+    def presentation_data(self) -> Iterator:
+        return self._presentation_data
+    
+    @presentation_data.setter
+    def presentation_data(self, presentation_data: Iterator):
+        self._presentation_data = presentation_data
+
+    @presentation_data.deleter
+    def presentation_data(self):
+        del self._presentation_data

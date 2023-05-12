@@ -16,5 +16,9 @@
         "pngs",
         "sourcery",
         "urandom"
-    ]
+    ],
+    "editor.tokenColorCustomizations": {
+        "comments": "",
+        "textMateRules": []
+    }
 }

@@ -46,7 +46,8 @@ class Metadata:
         if not cls._instance:
             if cls.app_settings_path.exists() and cls.app_metadata_path.exists():
                 cls._instance = Metadata.read(
-                    cls.app_metadata_path, Metadata.get_project_meta(cls.app_settings_path)
+                    cls.app_metadata_path,
+                    Metadata.get_project_meta(cls.app_settings_path),
                 )
             else:
                 cls._instance = Metadata()

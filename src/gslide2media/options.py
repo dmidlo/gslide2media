@@ -12,10 +12,12 @@ class Options:
     presentation_id: str | None = None
 
     run_all = False
+    max_walk_depth = 10
     # folder_id = "0B9ytToO3rm0mVW43MmttZTRJc2c"
     # presentation_id = "1oenPoz35QxrfrSrHeLR-NN5EDI3Nr5UuTbhOID02DsQ"
 
     dpi: int = 0
+    fps: int = 10
     aspect_ratio: str = ""
     screen_width: int | None = 0
     screen_height: int | None = 0
@@ -26,6 +28,7 @@ class Options:
 
     image_file_format = "svg"
     save_images_to_file = False
+    jpeg_quality: int = 90
 
     download_directory: Path | str | None = None
 

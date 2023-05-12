@@ -77,7 +77,9 @@ class AuthGoogle:
         authorized session for accessing Google APIs. These properties are stored as instance variables.
         """
         self.fetch_credentials(api_scopes)
-        self.creds = Credentials.from_authorized_user_info(config.META.google_client_token)
+        self.creds = Credentials.from_authorized_user_info(
+            config.META.google_client_token
+        )
 
         self.slides_service: Resource = self.create_slides_service()
         self.drive_service: Resource = self.create_drive_service()
@@ -215,7 +217,9 @@ class AuthGoogle:
         """
         # Using short-circuiting
         if config.META.google_client_token:
-            creds = Credentials.from_authorized_user_info(config.META.google_client_token)
+            creds = Credentials.from_authorized_user_info(
+                config.META.google_client_token
+            )
 
             if creds and not creds.valid and creds.expired and creds.refresh_token:
                 creds.refresh(Request())

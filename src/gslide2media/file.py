@@ -9,7 +9,7 @@ from gslide2media.enums import ExportFormats
 from gslide2media import config
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, kw_only=True)
 class File:
     extension: ExportFormats
     file_data: bytes | BytesIO

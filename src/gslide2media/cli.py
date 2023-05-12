@@ -588,23 +588,3 @@ class ArgParser(argparse.ArgumentParser):
                 "Must Specify either 'mp4_slide_duration_secs' or 'mp4_total_video_duration', "
                 "but not both."
             )
-
-    @staticmethod
-    def convert_options_to_string(options: Options) -> Options:
-        for item in vars(options):
-            if isinstance(getattr(options, item), int):
-                setattr(options, item, str(getattr(options, item)))
-
-            if isinstance(getattr(options, item), bool):
-                setattr(options, item, str(getattr(options, item)))
-
-            if isinstance(getattr(options, item), str):
-                setattr(options, item, str(getattr(options, item)))
-
-            if isinstance(getattr(options, item), Path):
-                setattr(options, item, str(getattr(options, item)))
-
-            if not getattr(options, item):
-                setattr(options, item, "")
-
-        return options

@@ -94,13 +94,13 @@ class ManualSteps(OrderedDict):
         import_google_client_secret_json_dialog(): Prompts the user to import the Google Auth client
                                                    secret JSON file.
     """
+
     def __init__(self) -> None:
         super().__init__(self)
 
         self.update(
             {
-                (" Set Project Name.  "
-                 "(press [enter] to continue.)"): {
+                (" Set Project Name.  " "(press [enter] to continue.)"): {
                     "complete": False,
                     "func": self.get_project_name,
                     "func_args": {
@@ -111,8 +111,10 @@ class ManualSteps(OrderedDict):
         )
         self.update(
             {
-                (" Verify your cloud console Dashboard URL.  "
-                 "(press [enter] to continue.)"): {
+                (
+                    " Verify your cloud console Dashboard URL.  "
+                    "(press [enter] to continue.)"
+                ): {
                     "complete": False,
                     "func": self.verify_project_url,
                     "func_args": {},
@@ -121,8 +123,9 @@ class ManualSteps(OrderedDict):
         )
         self.update(
             {
-                (" Enable API services for project.  "
-                 "(press [enter] to continue.)"): {
+                (
+                    " Enable API services for project.  " "(press [enter] to continue.)"
+                ): {
                     "complete": False,
                     "func": self.enable_api_services,
                     "func_args": {"services": {"drive", "slides"}},
@@ -131,8 +134,10 @@ class ManualSteps(OrderedDict):
         )
         self.update(
             {
-                (" Configure the Consent Screen Using the Create OAuth Client ID Wizard.  "
-                 "(press [enter] to continue.)"): {
+                (
+                    " Configure the Consent Screen Using the Create OAuth Client ID Wizard.  "
+                    "(press [enter] to continue.)"
+                ): {
                     "complete": False,
                     "func": self.configure_consent_screen,
                     "func_args": {},
@@ -141,8 +146,10 @@ class ManualSteps(OrderedDict):
         )
         self.update(
             {
-                (" Create an OAuth Client ID for the project.  "
-                 "(press [enter] to continue.)"): {
+                (
+                    " Create an OAuth Client ID for the project.  "
+                    "(press [enter] to continue.)"
+                ): {
                     "complete": False,
                     "func": self.open_client_id_wizard,
                     "func_args": {},
@@ -151,8 +158,10 @@ class ManualSteps(OrderedDict):
         )
         self.update(
             {
-                (" Download your google auth client_secret json file.  "
-                 "(press [enter] to continue.)"): {
+                (
+                    " Download your google auth client_secret json file.  "
+                    "(press [enter] to continue.)"
+                ): {
                     "complete": False,
                     "func": self.client_secret_download_instructions,
                     "func_args": {},
@@ -161,8 +170,7 @@ class ManualSteps(OrderedDict):
         )
         self.update(
             {
-                (" Import client secret Json file  "
-                 "(press [enter] to continue.)"): {
+                (" Import client secret Json file  " "(press [enter] to continue.)"): {
                     "complete": False,
                     "func": self.import_google_client_secret_json_dialog,
                     "func_args": {},
@@ -259,8 +267,10 @@ class ManualSteps(OrderedDict):
         Returns:
             None.
         """
-        self._cloud_drive_api_url: str = ("https://console.cloud.google.com/apis/library/"
-                                          f"drive.googleapis.com?project={project_name}")
+        self._cloud_drive_api_url: str = (
+            "https://console.cloud.google.com/apis/library/"
+            f"drive.googleapis.com?project={project_name}"
+        )
 
     @cloud_drive_api_url.deleter
     def cloud_drive_api_url(self) -> None:
@@ -291,8 +301,10 @@ class ManualSteps(OrderedDict):
         Returns:
             None.
         """
-        self._slides_api_url: str = ("https://console.cloud.google.com/apis/library/"
-                                     f"slides.googleapis.com?project={project_name}")
+        self._slides_api_url: str = (
+            "https://console.cloud.google.com/apis/library/"
+            f"slides.googleapis.com?project={project_name}"
+        )
 
     @slides_api_url.deleter
     def slides_api_url(self) -> None:
@@ -322,8 +334,10 @@ class ManualSteps(OrderedDict):
         Returns:
             None.
         """
-        self._consent_screen_wizard_url: str = ("https://console.cloud.google.com/apis/credentials/"
-                                                f"oauthclient?project={project_name}")
+        self._consent_screen_wizard_url: str = (
+            "https://console.cloud.google.com/apis/credentials/"
+            f"oauthclient?project={project_name}"
+        )
 
     @consent_screen_wizard_url.deleter
     def consent_screen_wizard_url(self) -> None:
@@ -353,8 +367,10 @@ class ManualSteps(OrderedDict):
         Returns:
             None.
         """
-        self._oauth_clientid_wizard_url: str = ("https://console.cloud.google.com/apis/credentials/"
-                                                f"oauthclient?project={project_name}")
+        self._oauth_clientid_wizard_url: str = (
+            "https://console.cloud.google.com/apis/credentials/"
+            f"oauthclient?project={project_name}"
+        )
 
     @oauth_clientid_wizard_url.deleter
     def oauth_clientid_wizard_url(self) -> None:
@@ -443,7 +459,8 @@ class ManualSteps(OrderedDict):
 
     :::User Instructions:::
 
-        """)
+        """
+        )
 
         project_name = inquirer.text(
             message="1. Choose a name for your API project [default: gslide2media]",
@@ -473,7 +490,8 @@ class ManualSteps(OrderedDict):
         ).execute():
             pyperclip.copy(self.project_name)
 
-            print("""
+            print(
+                """
 
 
 
@@ -486,7 +504,8 @@ class ManualSteps(OrderedDict):
 
             3. Click [Create]
 
-            """)
+            """
+            )
 
             sleep(1)
             print(f"\ncopying '{self.project_name}' to clipboard.")
@@ -518,7 +537,8 @@ class ManualSteps(OrderedDict):
         1. Would you like to visit your project's dashboard?
             *Not Required
 
-        """)
+        """
+        )
 
         if _ := inquirer.confirm(
             message=f"Open {self.project_name} cloud console project dashboard?  ([Enter] to Skip)",
@@ -563,13 +583,16 @@ class ManualSteps(OrderedDict):
 
         2. Click [Enable] on each Api's settings page.
 
-        """)
+        """
+        )
 
         if (
             "drive" in services
             and inquirer.confirm(
-                message=(f"Open {self.project_name} Google Drive API Details Page. "
-                         "([Enter] to Open in Web Browser.)"),
+                message=(
+                    f"Open {self.project_name} Google Drive API Details Page. "
+                    "([Enter] to Open in Web Browser.)"
+                ),
                 default=True,
             ).execute()
         ):
@@ -583,8 +606,10 @@ class ManualSteps(OrderedDict):
         if (
             "slides" in services
             and inquirer.confirm(
-                message=(f"Open {self.project_name} Google Slides API Details Page. "
-                         "([Enter] to Open in Web Browser.)"),
+                message=(
+                    f"Open {self.project_name} Google Slides API Details Page. "
+                    "([Enter] to Open in Web Browser.)"
+                ),
                 default=True,
             ).execute()
         ):
@@ -601,13 +626,16 @@ class ManualSteps(OrderedDict):
         for configuring App Information on the OAuth consent screen of the Edit App Registration Page.
         """
         if inquirer.confirm(
-            message=("Open the Consent Screen Wizard URL. "
-                     "([Enter] to Open in Web Browser.)"),
+            message=(
+                "Open the Consent Screen Wizard URL. "
+                "([Enter] to Open in Web Browser.)"
+            ),
             default=True,
         ).execute():
             pyperclip.copy(self.project_name)
 
-            print("""
+            print(
+                """
 
 
 
@@ -664,7 +692,8 @@ class ManualSteps(OrderedDict):
 
             8. Click [Save and Continue] and review your summary.")
 
-            """)
+            """
+            )
 
             sleep(1)
             print(f"\ncopying '{self.project_name}' to clipboard.")
@@ -689,7 +718,8 @@ class ManualSteps(OrderedDict):
         ).execute():
             pyperclip.copy(f"{self.project_name}_client")
 
-            print("""
+            print(
+                """
 
 
 
@@ -701,7 +731,8 @@ class ManualSteps(OrderedDict):
 
             3. Click [Create]
 
-            """)
+            """
+            )
 
             sleep(1)
             print(f"\ncopying '{self.project_name}' to clipboard.")
@@ -725,8 +756,8 @@ class ManualSteps(OrderedDict):
             message=f"Open the project {self.project_name}'s credentials page.",
             default=True,
         ).execute():
-
-            print("""
+            print(
+                """
 
 
 
@@ -741,12 +772,15 @@ class ManualSteps(OrderedDict):
 
             4. Save the client secret Json to a known file location")
 
-            """)
+            """
+            )
 
             for _ in track(
                 range(3),
-                description=(f"Opening project {self.project_name}'s credentials "
-                             "page URL in default browser."),
+                description=(
+                    f"Opening project {self.project_name}'s credentials "
+                    "page URL in default browser."
+                ),
             ):
                 sleep(1)
             webbrowser.open(self.project_credentials_url)
@@ -778,7 +812,9 @@ class ManualSteps(OrderedDict):
             str: The path to the selected file.
         """
 
-        print("\n\n**For security purposes, the client secret file will be deleted once it has been imported.**\n")
+        print(
+            "\n\n**For security purposes, the client secret file will be deleted once it has been imported.**\n"
+        )
         return inquirer.filepath(
             message="Enter path to your google client secret json file to import:",
             default=str(Path().resolve()),
@@ -807,6 +843,7 @@ class GoogleApiProject:
             the user interrupts the process. Returns the path to the client secret JSON file if
             available, otherwise returns None.
     """
+
     def __init__(self):
         self.manual_steps = ManualSteps()
 
@@ -844,14 +881,17 @@ class GoogleApiProject:
                 ]
 
                 step_to_complete = inquirer.select(
-                    message="", long_instruction="\n[ctrl-c] to exit.", choices=steps[:1]
+                    message="",
+                    long_instruction="\n[ctrl-c] to exit.",
+                    choices=steps[:1],
                 ).execute()
 
                 if step_to_complete is None:
                     break
 
-                if step_to_complete == (" Import client secret Json file  "
-                                        "(press [enter] to continue.)"):
+                if step_to_complete == (
+                    " Import client secret Json file  " "(press [enter] to continue.)"
+                ):
                     client_secret_path = self.manual_steps[step_to_complete]["func"](
                         **self.manual_steps[step_to_complete]["func_args"]
                     )
