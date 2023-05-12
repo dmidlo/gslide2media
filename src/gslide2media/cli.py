@@ -65,7 +65,7 @@ class ArgParser(argparse.ArgumentParser):
         self.mp4_parser = self.subparsers.add_parser(
             "mp4",
             help=(
-                "command for exporting google slides " "presentation(s) as (an) mp4(s)."
+                "command for exporting google slides presentation(s) as (an) mp4(s)."
             ),
             usage="gslide2media mp4 {presentation, folder} [options]",
             formatter_class=lambda prog: argparse.HelpFormatter(
@@ -105,7 +105,7 @@ class ArgParser(argparse.ArgumentParser):
         self.img_presentation_parser = self.img_subparsers.add_parser(
             "presentation",
             help=(
-                "command for exporting the slides of a goolge slides presentation as "
+                "command for exporting the slides of a google slides presentation as "
                 "individual images. in svg, png, or jpeg"
             ),
             usage=(
@@ -143,7 +143,7 @@ class ArgParser(argparse.ArgumentParser):
         self.mp4_presentation_parser = self.mp4_subparsers.add_parser(
             "presentation",
             help=(
-                "command for exporting the slides of a goolge slides presentation as an mp4 video."
+                "command for exporting the slides of a google slides presentation as an mp4 video."
             ),
             usage=(
                 "gslide2image mp4 presentation [-h] [-i, PRESENTATION_ID] "
@@ -529,11 +529,11 @@ class ArgParser(argparse.ArgumentParser):
 
     def _validate_is_pathlike(self, string: str) -> None:
         try:
-            path = Path(string)
+            path = Path(string)  # noqa:F841
         except (TypeError, ValueError) as err:
             raise ValueError("directory or file path is not pathlike.") from err
 
-        return string
+        return string  # type:ignore
 
     def _fix_path_strings(self):
         # Fix --download-directory
