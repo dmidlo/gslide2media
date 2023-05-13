@@ -47,7 +47,9 @@ class PresentationExportUrls:
                 _,
                 self.create_presentation_export_url(self.presentation_id, _),
             )
-            self.__annotations__[_.lower()] = UrlParseResult  # pylint: disable=no-member
+            self.__annotations__[
+                _.lower()
+            ] = UrlParseResult  # pylint: disable=no-member
 
     def __iter__(self):
         self.index = 0
@@ -77,12 +79,17 @@ class PresentationExportUrls:
 
         url_obj = getattr(self, key)
 
-        bytes_content = config.GOOGLE.auth_google.google_authorized_session.get(  # type:ignore
-            urlunparse(url_obj)
-        ).content
+        bytes_content = (
+            config.GOOGLE.auth_google.google_authorized_session.get(  # type:ignore
+                urlunparse(url_obj)
+            ).content
+        )
 
         return File(
-            extension=key, file_data=bytes_content, presentation_id=self.presentation_id, parent=self.parent  # type:ignore
+            extension=key,
+            file_data=bytes_content,
+            presentation_id=self.presentation_id,
+            parent=self.parent,  # type:ignore
         )
 
 
@@ -134,7 +141,7 @@ class FetchPresentationData:
                 extension="json",
                 file_data=presentation_data,
                 presentation_id=obj.presentation_id,
-                parent=self.parent
+                parent=self.parent,
             )
 
         return DataPartial(func)(obj=self)
@@ -149,7 +156,9 @@ class FetchPresentationData:
                 "codec": "h264",
             }
 
-            frame_count = int(config.ARGS.mp4_slide_duration_secs * config.ARGS.fps)  # type:ignore
+            frame_count = int(
+                config.ARGS.mp4_slide_duration_secs * config.ARGS.fps
+            )  # type:ignore
             video_frames = []
 
             for slide in slides:  # type: ignore
@@ -163,7 +172,7 @@ class FetchPresentationData:
                 extension=ExportFormats.MP4,
                 file_data=mp4_bytes,
                 presentation_id=obj.presentation_id,
-                parent=self.parent
+                parent=self.parent,
             )
 
         return DataPartial(func)
@@ -174,7 +183,9 @@ class FetchPresentationData:
                 GooglePresentationExportFormats.JSON
             }:
                 setattr(self, _, self.presentation_urls[_])
-                self.__annotations__[_.lower()] = type(functools.partial)  # pylint: disable=no-member
+                self.__annotations__[_.lower()] = type(
+                    functools.partial
+                )  # pylint: disable=no-member
         elif export_type is GooglePresentationExportTypes.DATA:
             setattr(self, "json", self.get_json_presentation_data())
             self.__annotations__["json"] = dict  # pylint: disable=no-member
@@ -188,24 +199,26 @@ class PresentationData:
     parent: str | None = None
 
     def __post_init__(self):
-        self.presentation_urls = PresentationExportUrls(self.presentation_id, parent=self.parent)
+        self.presentation_urls = PresentationExportUrls(
+            self.presentation_id, parent=self.parent
+        )
         self.file_data = FetchPresentationData(
             self.presentation_id,
             self.presentation_urls,
             GooglePresentationExportTypes.FILE,
-            self.parent
+            self.parent,
         )
         self.json_data = FetchPresentationData(
             self.presentation_id,
             self.presentation_urls,
             GooglePresentationExportTypes.DATA,
-            self.parent
+            self.parent,
         )
         self.mp4_data = FetchPresentationData(
             self.presentation_id,
             self.presentation_urls,
             GooglePresentationExportTypes.VIDEO,
-            self.parent
+            self.parent,
         )
 
     def __iter__(self):

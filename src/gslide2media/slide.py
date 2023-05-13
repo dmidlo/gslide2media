@@ -49,7 +49,9 @@ class SlideExportUrls:
                 _,
                 self.create_slide_export_url(self.presentation_id, self.slide_id, _),
             )
-            self.__annotations__[_.lower()] = UrlParseResult  # pylint: disable=no-member
+            self.__annotations__[
+                _.lower()
+            ] = UrlParseResult  # pylint: disable=no-member
 
     def __iter__(self):
         self.index = 0
@@ -79,9 +81,11 @@ class SlideExportUrls:
 
         url_obj = getattr(self, key)
 
-        bytes_content = config.GOOGLE.auth_google.google_authorized_session.get(  # type:ignore
-            urlunparse(url_obj)
-        ).content
+        bytes_content = (
+            config.GOOGLE.auth_google.google_authorized_session.get(  # type:ignore
+                urlunparse(url_obj)
+            ).content
+        )
 
         return Image(  # type:ignore
             img_format=key,
@@ -89,7 +93,7 @@ class SlideExportUrls:
             presentation_id=self.presentation_id,
             slide_id=self.slide_id,
             presentation_order=self.presentation_order,
-            parent=self.parent
+            parent=self.parent,
         )
 
 
@@ -145,7 +149,7 @@ class FetchSlideData:
                 presentation_id=obj.presentation_id,
                 slide_id=obj.slide_id,
                 presentation_order=obj.presentation_order,
-                parent=self.parent
+                parent=self.parent,
             )
 
         return DataPartial(func)(obj=self)
@@ -154,7 +158,9 @@ class FetchSlideData:
         if export_type is GoogleSlideExportTypes.IMAGE:
             for _ in set(ImageExportFormats):
                 setattr(self, _, self.slide_image_urls[_])
-                self.__annotations__[_.lower()] = type(functools.partial)  # pylint: disable=no-member
+                self.__annotations__[_.lower()] = type(
+                    functools.partial
+                )  # pylint: disable=no-member
         elif export_type is GoogleSlideExportTypes.DATA:
             setattr(self, "json", self.get_json_slide_data())
             self.__annotations__["json"] = dict  # pylint: disable=no-member

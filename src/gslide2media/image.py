@@ -49,7 +49,7 @@ class Image:
                     slide_id=self.slide_id,
                     presentation_order=self.presentation_order,
                     is_composite=self.is_composite,
-                    parent=self.parent
+                    parent=self.parent,
                 )
             case ImageExportFormats.JPEG:
                 with PILImage.open(BytesIO(self.img_data)) as img:
@@ -66,7 +66,7 @@ class Image:
                     slide_id=self.slide_id,
                     presentation_order=self.presentation_order,
                     is_composite=self.is_composite,
-                    parent=self.parent
+                    parent=self.parent,
                 )
 
             case ImageExportFormats.PNG:
@@ -101,5 +101,5 @@ class Image:
             slide_id=self.slide_id,
             presentation_order=self.presentation_order,
             is_composite=self.is_composite,
-            parent=self.parent
+            parent=self.parent,
         )

@@ -25,8 +25,16 @@ class File:
     _working_dir: Path | None = None
     _instances = {}  # type:ignore
 
-    def __new__(cls, extension=None, file_data=None, presentation_id=None, slide_id=None, presentation_order=0, presentation_name=None, parent=None):
-        
+    def __new__(
+        cls,
+        extension=None,
+        file_data=None,
+        presentation_id=None,
+        slide_id=None,
+        presentation_order=0,
+        presentation_name=None,
+        parent=None,
+    ):
         instance_id = extension, presentation_id, slide_id, parent
         if instance_id not in cls._instances:
             cls._instances[instance_id] = super(cls, cls).__new__(cls)
@@ -44,14 +52,20 @@ class File:
         if self.slide_id:
             self.path = (
                 self.working_dir
-                / "presentations" / config.GOOGLE.resolve_drive_file_path_to_root(self.presentation_id)[0]
+                / "presentations"
+                / config.GOOGLE.resolve_drive_file_path_to_root(
+                    self.presentation_id
+                ).name_path
                 / self.presentation_name
                 / f"{self.presentation_name}_slide_{self.presentation_order + 1:02}_{self.slide_id}.{self.extension}"
             )
         else:
             self.path = (
                 self.working_dir
-                / "presentations" / config.GOOGLE.resolve_drive_file_path_to_root(self.presentation_id)[0]
+                / "presentations"
+                / config.GOOGLE.resolve_drive_file_path_to_root(
+                    self.presentation_id
+                ).name_path
                 / self.presentation_name
                 / f"{self.presentation_name}.{self.extension}"
             )
@@ -85,7 +99,6 @@ class File:
             "_path": {self._path}
             "_working_dir": {self._working_dir}
         """
-
 
     @property
     def path(self):

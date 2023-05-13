@@ -36,7 +36,10 @@ class ToMedia:
         # folder_ids = ["1OotVomGB-_HvkgPO6nRQeJ5qQjR1yI-c", "0B7N3Xy--o-kQNkh0VkxKWVZueE0", "0B2uMDReI2FI0SlNKb3FZQmQxZWs"]
         # folder_list_of_folds = Folder(folder_ids=folder_ids)
 
-        presentation_ids = ["1oenPoz35QxrfrSrHeLR-NN5EDI3Nr5UuTbhOID02DsQ", "19cm7dFMa7SLCp0DdD8skOpEbLa8dO3QUB9r0vhzTcXA"]
+        presentation_ids = [
+            "1oenPoz35QxrfrSrHeLR-NN5EDI3Nr5UuTbhOID02DsQ",
+            "19cm7dFMa7SLCp0DdD8skOpEbLa8dO3QUB9r0vhzTcXA",
+        ]
         folder_list_of_presentations = Folder(presentation_ids=presentation_ids)
 
         folder_list_of_presentations.save(set(ExportFormats))

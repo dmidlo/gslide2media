@@ -99,7 +99,9 @@ def dataclass_unique_instance_cache(
         def new(cls, *args, **kwargs):
             instance_id = tuple(kwargs[_] for _ in id_keys)
             if instance_id not in cls._instances:
-                cls._instances[instance_id] = super(cls, cls).__new__(cls)  # pylint: disable=no-value-for-parameter
+                cls._instances[instance_id] = super(cls, cls).__new__(
+                    cls
+                )  # pylint: disable=no-value-for-parameter
 
             return cls._instances[instance_id]
 

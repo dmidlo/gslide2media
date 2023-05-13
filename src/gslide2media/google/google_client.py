@@ -1,5 +1,6 @@
 from typing import Optional
 from typing import Tuple
+from typing import NamedTuple
 
 from googleapiclient.errors import HttpError
 from pathlib import Path
@@ -172,7 +173,9 @@ class GoogleClient:
         presentation: dict = self.get_google_slides_presentation(presentation_id)
         return presentation["title"].strip().replace(" ", "-")
 
-    def resolve_drive_file_path_to_root(self, file_resource_id: str) -> Tuple[Path, Path] | None:
+    def resolve_drive_file_path_to_root(
+        self, file_resource_id: str
+    ) -> Tuple[Path, Path] | None:
         try:
             file_metadata = (
                 self.auth_google.drive_service.files()  # pylint: disable=no-member
@@ -209,8 +212,8 @@ class GoogleClient:
                 root_id_path = root_id_path / _[0]
                 root_name_path = root_name_path / _[1]
 
-            return root_name_path, root_id_path
-        
+            return ResolvedDrivePath(root_name_path, root_id_path)
+
         except HttpError as error:
             print(f"An error occurred: {error}")
             return None
@@ -237,3 +240,8 @@ class GoogleClient:
         except HttpError as error:
             print(f"An error occurred: {error}")
             return None
+
+
+class ResolvedDrivePath(NamedTuple):
+    name_path: Path
+    id_path: Path
