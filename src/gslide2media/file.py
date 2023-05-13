@@ -5,6 +5,8 @@ import json
 from io import BytesIO
 from pathlib import Path
 
+from rich import print
+
 from gslide2media.enums import ExportFormats
 from gslide2media import config
 
@@ -17,16 +19,15 @@ class File:
     slide_id: str | None = None
     presentation_order: int = 0
     presentation_name: str | None = None
+    parent: str | None = None
 
     _path: Path | None = None
     _working_dir: Path | None = None
     _instances = {}  # type:ignore
 
-    def __new__(cls, *args, **kwargs):
-        instance_id = tuple(
-            kwargs[_] if hasattr(kwargs, _) else "None"
-            for _ in ["extension", "presentation_id", "slide_id"]
-        )
+    def __new__(cls, extension=None, file_data=None, presentation_id=None, slide_id=None, presentation_order=0, presentation_name=None, parent=None):
+        
+        instance_id = extension, presentation_id, slide_id, parent
         if instance_id not in cls._instances:
             cls._instances[instance_id] = super(cls, cls).__new__(cls)
 
@@ -43,14 +44,14 @@ class File:
         if self.slide_id:
             self.path = (
                 self.working_dir
-                / "presentations"
+                / "presentations" / config.GOOGLE.resolve_drive_file_path_to_root(self.presentation_id)[0]
                 / self.presentation_name
                 / f"{self.presentation_name}_slide_{self.presentation_order + 1:02}_{self.slide_id}.{self.extension}"
             )
         else:
             self.path = (
                 self.working_dir
-                / "presentations"
+                / "presentations" / config.GOOGLE.resolve_drive_file_path_to_root(self.presentation_id)[0]
                 / self.presentation_name
                 / f"{self.presentation_name}.{self.extension}"
             )
@@ -67,6 +68,24 @@ class File:
 
         with self.path.open("wb") as file:
             file.write(data)
+
+    @classmethod
+    def get_instance_count(cls) -> int:
+        return len(cls._instances)
+
+    def __repr__(self):
+        return f"""
+            "extension": {self.extension}
+            "file_data": {"True" if self.file_data else "False"}
+            "presentation_id": {self.presentation_id}
+            "slide_id": {self.slide_id}
+            "presentation_order": {self.presentation_order}
+            "presentation_name": {self.presentation_name}
+            "parent": {self.parent}
+            "_path": {self._path}
+            "_working_dir": {self._working_dir}
+        """
+
 
     @property
     def path(self):

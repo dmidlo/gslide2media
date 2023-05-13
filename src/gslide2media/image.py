@@ -17,6 +17,7 @@ class Image:
     slide_id: str
     presentation_order: int = 0
     is_composite: bool = False
+    parent: str | None = None
 
     def to_file(self):
         return File(
@@ -25,6 +26,7 @@ class Image:
             presentation_id=self.presentation_id,
             slide_id=self.slide_id,
             presentation_order=self.presentation_order,
+            parent=self.parent,
         )
 
     def to_png(self):
@@ -47,6 +49,7 @@ class Image:
                     slide_id=self.slide_id,
                     presentation_order=self.presentation_order,
                     is_composite=self.is_composite,
+                    parent=self.parent
                 )
             case ImageExportFormats.JPEG:
                 with PILImage.open(BytesIO(self.img_data)) as img:
@@ -63,6 +66,7 @@ class Image:
                     slide_id=self.slide_id,
                     presentation_order=self.presentation_order,
                     is_composite=self.is_composite,
+                    parent=self.parent
                 )
 
             case ImageExportFormats.PNG:
@@ -97,4 +101,5 @@ class Image:
             slide_id=self.slide_id,
             presentation_order=self.presentation_order,
             is_composite=self.is_composite,
+            parent=self.parent
         )

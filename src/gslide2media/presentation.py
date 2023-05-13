@@ -23,6 +23,7 @@ from gslide2media import config
 @dataclass
 class PresentationExportUrls:
     presentation_id: str
+    parent: str | None = None
 
     def __post_init__(self):
         self.set_resource_export_url_attributes()
@@ -81,7 +82,7 @@ class PresentationExportUrls:
         ).content
 
         return File(
-            extension=key, file_data=bytes_content, presentation_id=self.presentation_id  # type:ignore
+            extension=key, file_data=bytes_content, presentation_id=self.presentation_id, parent=self.parent  # type:ignore
         )
 
 
@@ -90,6 +91,7 @@ class FetchPresentationData:
     presentation_id: str
     presentation_urls: PresentationExportUrls
     export_type: GooglePresentationExportTypes
+    parent: str | None = None
 
     def __post_init__(self):
         self.create_self_attributes(self.export_type)
@@ -132,6 +134,7 @@ class FetchPresentationData:
                 extension="json",
                 file_data=presentation_data,
                 presentation_id=obj.presentation_id,
+                parent=self.parent
             )
 
         return DataPartial(func)(obj=self)
@@ -160,6 +163,7 @@ class FetchPresentationData:
                 extension=ExportFormats.MP4,
                 file_data=mp4_bytes,
                 presentation_id=obj.presentation_id,
+                parent=self.parent
             )
 
         return DataPartial(func)
@@ -181,23 +185,27 @@ class FetchPresentationData:
 @dataclass
 class PresentationData:
     presentation_id: str
+    parent: str | None = None
 
     def __post_init__(self):
-        self.presentation_urls = PresentationExportUrls(self.presentation_id)
+        self.presentation_urls = PresentationExportUrls(self.presentation_id, parent=self.parent)
         self.file_data = FetchPresentationData(
             self.presentation_id,
             self.presentation_urls,
             GooglePresentationExportTypes.FILE,
+            self.parent
         )
         self.json_data = FetchPresentationData(
             self.presentation_id,
             self.presentation_urls,
             GooglePresentationExportTypes.DATA,
+            self.parent
         )
         self.mp4_data = FetchPresentationData(
             self.presentation_id,
             self.presentation_urls,
             GooglePresentationExportTypes.VIDEO,
+            self.parent
         )
 
     def __iter__(self):
@@ -280,7 +288,7 @@ class Presentation:
 
     def __post_init__(self):
         if self.presentation_id:
-            self.presentation_data = PresentationData(self.presentation_id)
+            self.presentation_data = PresentationData(self.presentation_id, self.parent)
             self.presentation_data.json_data.json = convert_partial_to_bytes(
                 self.presentation_data.json_data, ExportFormats.JSON
             )
@@ -291,7 +299,7 @@ class Presentation:
             )
         else:
             self.presentation_id = "batch"
-            self.presentation_data = PresentationData(self.presentation_id)
+            self.presentation_data = PresentationData(self.presentation_id, self.parent)
 
             if not self.presentation_name:
                 self.presentation_name = "batch"
@@ -309,6 +317,7 @@ class Presentation:
                     presentation_id=self.presentation_id,
                     presentation_order=i,
                     slide_duration_secs=config.ARGS.mp4_slide_duration_secs,
+                    parent=self.parent,
                 )
                 for i, slide in enumerate(
                     self.presentation_data.json_data.json.file_data.get("slides")
@@ -321,17 +330,18 @@ class Presentation:
                     presentation_id=_[0],
                     presentation_order=i,
                     slide_duration_secs=config.ARGS.mp4_slide_duration_secs,
+                    parent=self.parent,
                 )
                 for i, _ in enumerate(self.slide_ids)
             ]
 
-    def save_to_file(self, key_formats: set):
+    def save(self, key_formats: set):
         file = None
         for key in key_formats:
             match key:
                 case key if key in set(ImageExportFormats):
                     for _ in self.slides:  # type:ignore
-                        _.save_to_file(key)
+                        _.save(key)
                 case key if key in set(GooglePresentationExportFormats) - {
                     GooglePresentationExportFormats.JSON
                 }:
@@ -343,7 +353,7 @@ class Presentation:
                         self.presentation_data.json_data, key  # type:ignore
                     )
                     for _ in self.slides:  # type:ignore
-                        _.save_to_file(key)
+                        _.save(key)
                 case key if key == ExportFormats.MP4:
                     file = convert_partial_to_bytes(
                         self.presentation_data.mp4_data, key  # type:ignore

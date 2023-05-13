@@ -21,6 +21,7 @@ class SlideExportUrls:
     slide_id: str
     presentation_id: str
     presentation_order: int = 0
+    parent: str | None = None
 
     def __post_init__(self):
         self.set_resource_export_url_attributes()
@@ -88,6 +89,7 @@ class SlideExportUrls:
             presentation_id=self.presentation_id,
             slide_id=self.slide_id,
             presentation_order=self.presentation_order,
+            parent=self.parent
         )
 
 
@@ -98,6 +100,7 @@ class FetchSlideData:
     slide_image_urls: SlideExportUrls
     export_type: GoogleSlideExportTypes
     presentation_order: int = 0
+    parent: str | None = None
 
     def __post_init__(self):
         self.create_self_attributes(self.export_type)
@@ -142,6 +145,7 @@ class FetchSlideData:
                 presentation_id=obj.presentation_id,
                 slide_id=obj.slide_id,
                 presentation_order=obj.presentation_order,
+                parent=self.parent
             )
 
         return DataPartial(func)(obj=self)
@@ -161,10 +165,11 @@ class SlideData:
     slide_id: str
     presentation_id: str
     presentation_order: int
+    parent: str | None = None
 
     def __post_init__(self) -> None:
         self.slide_image_urls: SlideExportUrls = SlideExportUrls(
-            self.slide_id, self.presentation_id, self.presentation_order
+            self.slide_id, self.presentation_id, self.presentation_order, self.parent
         )
         self.image_data = FetchSlideData(
             self.slide_id,
@@ -172,6 +177,7 @@ class SlideData:
             self.slide_image_urls,
             GoogleSlideExportTypes.IMAGE,
             self.presentation_order,
+            self.parent,
         )
         self.json_data = FetchSlideData(
             self.slide_id,
@@ -179,6 +185,7 @@ class SlideData:
             self.slide_image_urls,
             GoogleSlideExportTypes.DATA,
             self.presentation_order,
+            self.parent,
         )
 
     def __iter__(self):
@@ -230,10 +237,11 @@ class Slide:
     presentation_order: int
     slide_duration_secs: int = 0
     slide_data: SlideData | None = None
+    parent: str | None = None
 
     def __post_init__(self) -> None:
         self.slide_data: SlideData = SlideData(
-            self.slide_id, self.presentation_id, self.presentation_order
+            self.slide_id, self.presentation_id, self.presentation_order, self.parent
         )
 
     def __call__(self, presentation_order: int | None = None):
@@ -241,7 +249,7 @@ class Slide:
             self.presentation_order = presentation_order
         return self
 
-    def save_to_file(self, key):
+    def to_file(self, key):
         match key:
             case key if key in set(ImageExportFormats):
                 svg_image = convert_partial_to_bytes(self.slide_data.image_data, key)
@@ -260,7 +268,10 @@ class Slide:
             case _:
                 raise ValueError(f"{_} is an invalid file type.")
 
-        file.save()
+        return file
+
+    def save(self, key):
+        self.to_file(key).save()
 
     def get_bytes(self, key):
         match key:

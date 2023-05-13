@@ -188,9 +188,9 @@ class Folder:
     def get_root_folder(cls):
         return cls._root_instance
 
-    def save_to_file(self, key_formats: set):
+    def save(self, key_formats: set):
         for _ in convert_partial_to_bytes(self, "presentations"):
-            _.save_to_file(key_formats)
+            _.save(key_formats)
 
     @property
     def folders(self) -> Iterator | None:

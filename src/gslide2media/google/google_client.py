@@ -1,6 +1,8 @@
 from typing import Optional
+from typing import Tuple
 
 from googleapiclient.errors import HttpError
+from pathlib import Path
 
 from gslide2media.google.auth import AuthGoogle
 from gslide2media.options import Options
@@ -169,6 +171,49 @@ class GoogleClient:
     def get_presentation_name(self, presentation_id: str) -> str:
         presentation: dict = self.get_google_slides_presentation(presentation_id)
         return presentation["title"].strip().replace(" ", "-")
+
+    def resolve_drive_file_path_to_root(self, file_resource_id: str) -> Tuple[Path, Path] | None:
+        try:
+            file_metadata = (
+                self.auth_google.drive_service.files()  # pylint: disable=no-member
+                .get(fileId=file_resource_id, fields="name, parents")
+                .execute()
+            )
+
+            parent = file_metadata.get("parents")
+
+            parent_id_list, parent_name_list = [], []
+            if parent:
+                parent_id_list.append(parent[0])
+
+            while parent:
+                parent_metadata = (
+                    self.auth_google.drive_service.files()  # pylint: disable=no-member
+                    .get(fileId=parent[0], fields="name, parents")
+                    .execute()
+                )
+
+                parent_name = parent_metadata.get("name")
+                parent_parent = parent_metadata.get("parents")
+
+                parent_name_list.append(parent_name.strip().replace(" ", "-"))
+                if parent_parent:
+                    parent_id_list.append(parent_parent[0])
+
+                parent = parent_parent
+
+            root_id_path = Path()
+            root_name_path = Path()
+
+            for _ in zip(reversed(parent_id_list), reversed(parent_name_list)):
+                root_id_path = root_id_path / _[0]
+                root_name_path = root_name_path / _[1]
+
+            return root_name_path, root_id_path
+        
+        except HttpError as error:
+            print(f"An error occurred: {error}")
+            return None
 
     def get_parent_folder_of_google_file(self, file_resource_id: str) -> str | None:
         try:
