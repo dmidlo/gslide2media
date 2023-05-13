@@ -1,9 +1,12 @@
 from typing import Iterator
 from dataclasses import dataclass
+from itertools import chain
 from gslide2media.presentation import Presentation
 from gslide2media.utils import DataPartial
 from gslide2media.utils import convert_partial_to_bytes
 from gslide2media import config
+
+from rich import print
 
 
 @dataclass(slots=True, kw_only=True)
@@ -12,12 +15,13 @@ class Folder:
     folder_name: str | None = None
     parent: str | None = None
     presentation_ids: list[str] | None = None
+    presentations: Iterator | list[Presentation] | None = None
     folder_ids: list[str] | None = None
 
     _root_instance = None
     _instances = {}  # type:ignore
     _folders: Iterator | None = None
-    _presentations: Iterator | None = None
+    _custom_presentations: list[Presentation] | None = None
     _drive_folder_tree: dict | None = None
     _attributes: list[str] | None = None
     _index: int | None = None
@@ -28,6 +32,7 @@ class Folder:
         folder_name=None,
         parent=None,
         presentation_ids=None,
+        presentations=None,
         folder_ids=None,
     ):
         if folder_id is None and presentation_ids is None and folder_ids is None:
@@ -46,13 +51,13 @@ class Folder:
             return cls._instances[instance_id]
 
     def __post_init__(self):
-        if self is self.get_root_folder():
+        if self is self.get_root_folder() and not self.presentation_ids and not self.folder_ids and not self.presentations:
             self.folder_id = "root"
             self.folder_name = "root"
             self.folders = self.get_folders_in_root_partial()
             self.presentations = self.get_presentations_in_root_partial()
             self.drive_folder_tree = self.walk()
-        elif self.presentation_ids or self.folder_ids:
+        elif self.presentation_ids or self.folder_ids or self.presentations:
             if not self.folder_id:
                 self.folder_id = "batch"
             if not self.folder_name:
@@ -61,6 +66,8 @@ class Folder:
                 self.parent = "batch"
 
             self.folders = self.get_folders_from_ids_list()
+            if self.presentations:
+                self.custom_presentations = self.presentations
             self.presentations = self.get_presentations_from_ids_list()
         else:
             if not self.folder_name:
@@ -155,13 +162,23 @@ class Folder:
 
     def get_presentations_from_ids_list(self):
         def func(obj):
-            return (
-                Presentation(
-                    presentation_id=_,
-                    parent=config.GOOGLE.get_parent_folder_of_google_file(_),
+            if obj.presentation_ids:
+                presentations_from_ids = (
+                    Presentation(
+                        presentation_id=_,
+                        parent=config.GOOGLE.get_parent_folder_of_google_file(_),
+                    )
+                    for _ in obj.presentation_ids
                 )
-                for _ in obj.presentation_ids
-            )
+
+                if self.custom_presentations:
+                    presentations_from_ids = chain(presentations_from_ids, iter(self.custom_presentations))
+                return presentations_from_ids
+            
+            elif self.custom_presentations:
+                return iter(self.custom_presentations)
+
+            return None
 
         return DataPartial(func)(obj=self)
 
@@ -192,6 +209,24 @@ class Folder:
         for _ in convert_partial_to_bytes(self, "presentations"):
             _.save(key_formats)
 
+    def recursive_save(self, key_formats: set):
+
+        def func(folder=None, level=0):
+            if folder is None:
+                folder = self
+
+            if convert_partial_to_bytes(folder, "presentations"):
+                for _ in folder.presentations:
+                    _.save(key_formats)
+
+            for child in folder.folders.get():
+                func(child, level + 1)
+
+            if level == 0:
+                return True
+            
+        return func()
+
     @property
     def folders(self) -> Iterator | None:
         return self._folders
@@ -205,16 +240,16 @@ class Folder:
         del self._folders
 
     @property
-    def presentations(self) -> Iterator | None:
-        return self._presentations
+    def custom_presentations(self) -> list[Presentation] | None:
+        return self._custom_presentations
 
-    @presentations.setter
-    def presentations(self, presentations: Iterator):
-        self._presentations = presentations
+    @custom_presentations.setter
+    def custom_presentations(self, custom_presentations: list[Presentation]):
+        self._custom_presentations = custom_presentations
 
-    @presentations.deleter
-    def presentations(self):
-        del self._presentations
+    @custom_presentations.deleter
+    def custom_presentations(self):
+        del self._custom_presentations
 
     @property
     def drive_folder_tree(self) -> dict | None:

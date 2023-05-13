@@ -20,6 +20,7 @@ class File:
     presentation_order: int = 0
     presentation_name: str | None = None
     parent: str | None = None
+    is_batch: bool = False
 
     _path: Path | None = None
     _working_dir: Path | None = None
@@ -34,6 +35,7 @@ class File:
         presentation_order=0,
         presentation_name=None,
         parent=None,
+        is_batch=False,
     ):
         instance_id = extension, presentation_id, slide_id, parent
         if instance_id not in cls._instances:
@@ -49,13 +51,16 @@ class File:
                 self.presentation_id
             )
 
+        if self.is_batch:
+            resolved_drive_path = "gslide2media"
+        else:
+            resolved_drive_path = config.GOOGLE.resolve_drive_file_path_to_root(self.presentation_id).name_path
+
         if self.slide_id:
             self.path = (
                 self.working_dir
                 / "presentations"
-                / config.GOOGLE.resolve_drive_file_path_to_root(
-                    self.presentation_id
-                ).name_path
+                / resolved_drive_path
                 / self.presentation_name
                 / f"{self.presentation_name}_slide_{self.presentation_order + 1:02}_{self.slide_id}.{self.extension}"
             )
@@ -63,9 +68,7 @@ class File:
             self.path = (
                 self.working_dir
                 / "presentations"
-                / config.GOOGLE.resolve_drive_file_path_to_root(
-                    self.presentation_id
-                ).name_path
+                / resolved_drive_path
                 / self.presentation_name
                 / f"{self.presentation_name}.{self.extension}"
             )

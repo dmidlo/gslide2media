@@ -186,6 +186,7 @@ class GoogleClient:
             parent = file_metadata.get("parents")
 
             parent_id_list, parent_name_list = [], []
+
             if parent:
                 parent_id_list.append(parent[0])
 
@@ -196,12 +197,15 @@ class GoogleClient:
                     .execute()
                 )
 
-                parent_name = parent_metadata.get("name")
+                parent_name = parent_metadata.get("name").strip().replace(" ", "-")
                 parent_parent = parent_metadata.get("parents")
 
-                parent_name_list.append(parent_name.strip().replace(" ", "-"))
-                if parent_parent:
-                    parent_id_list.append(parent_parent[0])
+                if parent_name == "My-Drive":
+                    parent_id_list.pop()
+                else:
+                    parent_name_list.append(parent_name)
+                    if parent_parent:
+                        parent_id_list.append(parent_parent[0])
 
                 parent = parent_parent
 

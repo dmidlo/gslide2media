@@ -24,6 +24,8 @@ from gslide2media import config
 class PresentationExportUrls:
     presentation_id: str
     parent: str | None = None
+    presentation_name: str | None = None
+    is_batch: bool = False
 
     def __post_init__(self):
         self.set_resource_export_url_attributes()
@@ -89,7 +91,9 @@ class PresentationExportUrls:
             extension=key,
             file_data=bytes_content,
             presentation_id=self.presentation_id,
-            parent=self.parent,  # type:ignore
+            parent=self.parent,
+            presentation_name=self.presentation_name,  # type:ignore
+            is_batch=self.is_batch,
         )
 
 
@@ -99,6 +103,8 @@ class FetchPresentationData:
     presentation_urls: PresentationExportUrls
     export_type: GooglePresentationExportTypes
     parent: str | None = None
+    presentation_name: str | None = None
+    is_batch: bool = False
 
     def __post_init__(self):
         self.create_self_attributes(self.export_type)
@@ -134,15 +140,18 @@ class FetchPresentationData:
 
     def get_json_presentation_data(self):
         def func(obj):
-            presentation_data = config.GOOGLE.get_google_slides_presentation(
-                obj.presentation_id
-            )
-            return File(
-                extension="json",
-                file_data=presentation_data,
-                presentation_id=obj.presentation_id,
-                parent=self.parent,
-            )
+            if not self.is_batch:
+                presentation_data = config.GOOGLE.get_google_slides_presentation(
+                    obj.presentation_id
+                )
+                return File(
+                    extension="json",
+                    file_data=presentation_data,
+                    presentation_id=obj.presentation_id,
+                    parent=obj.parent,
+                    presentation_name=obj.presentation_name,
+                    is_batch=self.is_batch,
+                )
 
         return DataPartial(func)(obj=self)
 
@@ -173,6 +182,8 @@ class FetchPresentationData:
                 file_data=mp4_bytes,
                 presentation_id=obj.presentation_id,
                 parent=self.parent,
+                presentation_name=self.presentation_name,
+                is_batch=self.is_batch
             )
 
         return DataPartial(func)
@@ -197,28 +208,36 @@ class FetchPresentationData:
 class PresentationData:
     presentation_id: str
     parent: str | None = None
+    presentation_name: str | None = None
+    is_batch: bool = False
 
     def __post_init__(self):
         self.presentation_urls = PresentationExportUrls(
-            self.presentation_id, parent=self.parent
+            self.presentation_id, self.parent, self.presentation_name, self.is_batch
         )
         self.file_data = FetchPresentationData(
             self.presentation_id,
             self.presentation_urls,
             GooglePresentationExportTypes.FILE,
             self.parent,
+            self.presentation_name,
+            self.is_batch,
         )
         self.json_data = FetchPresentationData(
             self.presentation_id,
             self.presentation_urls,
             GooglePresentationExportTypes.DATA,
             self.parent,
+            self.presentation_name,
+            self.is_batch
         )
         self.mp4_data = FetchPresentationData(
             self.presentation_id,
             self.presentation_urls,
             GooglePresentationExportTypes.VIDEO,
             self.parent,
+            self.presentation_name,
+            self.is_batch
         )
 
     def __iter__(self):
@@ -284,6 +303,7 @@ class Presentation:
     parent: str | None = None
     slide_ids: list[tuple[str, str]] | None = None
     presentation_name: str | None = None
+    is_batch: bool = False
 
     _slides: list | None = None
     _presentation_data: PresentationData | None = None
@@ -300,22 +320,11 @@ class Presentation:
         return cls._instances[instance_id]
 
     def __post_init__(self):
-        if self.presentation_id:
-            self.presentation_data = PresentationData(self.presentation_id, self.parent)
-            self.presentation_data.json_data.json = convert_partial_to_bytes(
-                self.presentation_data.json_data, ExportFormats.JSON
-            )
-            self.presentation_name = (
-                self.presentation_data.json_data.json.file_data["title"]
-                .strip()
-                .replace(" ", "-")
-            )
+        if not self.is_batch and self.presentation_id and not self.slide_ids:
+            self.presentation_name = config.GOOGLE.get_presentation_name(self.presentation_id)
+            self.presentation_data = PresentationData(self.presentation_id, self.parent, self.presentation_name)
         else:
-            self.presentation_id = "batch"
-            self.presentation_data = PresentationData(self.presentation_id, self.parent)
-
-            if not self.presentation_name:
-                self.presentation_name = "batch"
+            self.presentation_data = PresentationData(self.presentation_id, self.parent, self.presentation_name, self.is_batch)
 
         self.populate_slides()
         self.presentation_data.mp4_data.mp4 = self.presentation_data.mp4_data.mp4(
@@ -324,6 +333,7 @@ class Presentation:
 
     def populate_slides(self):
         if self.slide_ids is None:
+            self.presentation_data.json_data.json = convert_partial_to_bytes(self.presentation_data.json_data, GooglePresentationExportFormats.JSON)
             self.slides = [
                 Slide(
                     slide_id=slide["objectId"],
@@ -331,6 +341,7 @@ class Presentation:
                     presentation_order=i,
                     slide_duration_secs=config.ARGS.mp4_slide_duration_secs,
                     parent=self.parent,
+                    presentation_name=self.presentation_name,
                 )
                 for i, slide in enumerate(
                     self.presentation_data.json_data.json.file_data.get("slides")
@@ -344,6 +355,8 @@ class Presentation:
                     presentation_order=i,
                     slide_duration_secs=config.ARGS.mp4_slide_duration_secs,
                     parent=self.parent,
+                    presentation_name=self.presentation_name,
+                    is_batch=True,
                 )
                 for i, _ in enumerate(self.slide_ids)
             ]
@@ -362,9 +375,10 @@ class Presentation:
                         self.presentation_data.file_data, key  # type:ignore
                     )
                 case key if key == ExportFormats.JSON:
-                    file = convert_partial_to_bytes(
-                        self.presentation_data.json_data, key  # type:ignore
-                    )
+                    if not self.slide_ids:
+                        file = convert_partial_to_bytes(
+                            self.presentation_data.json_data, key  # type:ignore
+                        )
                     for _ in self.slides:  # type:ignore
                         _.save(key)
                 case key if key == ExportFormats.MP4:

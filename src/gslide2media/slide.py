@@ -22,6 +22,9 @@ class SlideExportUrls:
     presentation_id: str
     presentation_order: int = 0
     parent: str | None = None
+    presentation_name: str | None = None
+    is_composite: bool = False
+    is_batch: bool = False
 
     def __post_init__(self):
         self.set_resource_export_url_attributes()
@@ -94,6 +97,8 @@ class SlideExportUrls:
             slide_id=self.slide_id,
             presentation_order=self.presentation_order,
             parent=self.parent,
+            presentation_name=self.presentation_name,
+            is_batch=self.is_batch
         )
 
 
@@ -105,6 +110,9 @@ class FetchSlideData:
     export_type: GoogleSlideExportTypes
     presentation_order: int = 0
     parent: str | None = None
+    presentation_name: str | None = None
+    is_composite: bool = False
+    is_batch: bool = False
 
     def __post_init__(self):
         self.create_self_attributes(self.export_type)
@@ -150,6 +158,8 @@ class FetchSlideData:
                 slide_id=obj.slide_id,
                 presentation_order=obj.presentation_order,
                 parent=self.parent,
+                presentation_name=self.presentation_name,
+                is_batch=self.is_batch
             )
 
         return DataPartial(func)(obj=self)
@@ -172,10 +182,13 @@ class SlideData:
     presentation_id: str
     presentation_order: int
     parent: str | None = None
+    presentation_name: str | None = None
+    is_composite: bool = False
+    is_batch: bool = False
 
     def __post_init__(self) -> None:
         self.slide_image_urls: SlideExportUrls = SlideExportUrls(
-            self.slide_id, self.presentation_id, self.presentation_order, self.parent
+            self.slide_id, self.presentation_id, self.presentation_order, self.parent, self.presentation_name, self.is_composite, self.is_batch
         )
         self.image_data = FetchSlideData(
             self.slide_id,
@@ -184,6 +197,7 @@ class SlideData:
             GoogleSlideExportTypes.IMAGE,
             self.presentation_order,
             self.parent,
+            self.presentation_name, self.is_composite, self.is_batch
         )
         self.json_data = FetchSlideData(
             self.slide_id,
@@ -192,6 +206,7 @@ class SlideData:
             GoogleSlideExportTypes.DATA,
             self.presentation_order,
             self.parent,
+            self.presentation_name, self.is_composite, self.is_batch
         )
 
     def __iter__(self):
@@ -244,10 +259,13 @@ class Slide:
     slide_duration_secs: int = 0
     slide_data: SlideData | None = None
     parent: str | None = None
+    presentation_name: str | None = None
+    is_composite: bool = False
+    is_batch: bool = False
 
     def __post_init__(self) -> None:
         self.slide_data: SlideData = SlideData(
-            self.slide_id, self.presentation_id, self.presentation_order, self.parent
+            self.slide_id, self.presentation_id, self.presentation_order, self.parent, self.presentation_name, self.is_composite, self.is_batch
         )
 
     def __call__(self, presentation_order: int | None = None):
