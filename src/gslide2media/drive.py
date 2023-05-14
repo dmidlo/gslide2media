@@ -1,4 +1,5 @@
 from typing import Iterator
+from typing import Generator
 from dataclasses import dataclass
 from itertools import chain
 from gslide2media.presentation import Presentation
@@ -204,6 +205,29 @@ class Folder:
     @classmethod
     def get_root_folder(cls):
         return cls._root_instance
+
+    def to_file(self, key_formats: set):
+        for _ in convert_partial_to_bytes(self, "presentations"):
+            yield from _.to_file(key_formats)
+
+    def recursive_to_file(self, key_formats: set) -> Generator:
+        def func(folder=None, presentations=None, level=0) -> Generator:
+            if presentations is None:
+                presentations = []
+            if folder is None:
+                folder = self
+
+            if convert_partial_to_bytes(folder, "presentations"):
+                yield from (_.to_file(key_formats) for _ in folder.presentations)
+
+            for child in folder.folders.get():
+                func(child, presentations, level + 1)
+
+            if level == 0:
+                return
+
+        yield from func()
+            
 
     def save(self, key_formats: set):
         for _ in convert_partial_to_bytes(self, "presentations"):

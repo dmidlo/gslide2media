@@ -24,6 +24,7 @@ class File:
 
     _path: Path | None = None
     _working_dir: Path | None = None
+    _resolved_drive_path: Path | str | None = None
     _instances = {}  # type:ignore
 
     def __new__(
@@ -52,15 +53,17 @@ class File:
             )
 
         if self.is_batch:
-            resolved_drive_path = "gslide2media"
+            self.resolved_drive_path = "gslide2media"
+            drive_path = self.resolved_drive_path
         else:
-            resolved_drive_path = config.GOOGLE.resolve_drive_file_path_to_root(self.presentation_id).name_path
+            self.resolved_drive_path = config.GOOGLE.resolve_drive_file_path_to_root(self.presentation_id)
+            drive_path = self.resolved_drive_path.name_path
 
         if self.slide_id:
             self.path = (
                 self.working_dir
                 / "presentations"
-                / resolved_drive_path
+                / drive_path
                 / self.presentation_name
                 / f"{self.presentation_name}_slide_{self.presentation_order + 1:02}_{self.slide_id}.{self.extension}"
             )
@@ -68,7 +71,7 @@ class File:
             self.path = (
                 self.working_dir
                 / "presentations"
-                / resolved_drive_path
+                / drive_path
                 / self.presentation_name
                 / f"{self.presentation_name}.{self.extension}"
             )
@@ -99,9 +102,19 @@ class File:
             "presentation_order": {self.presentation_order}
             "presentation_name": {self.presentation_name}
             "parent": {self.parent}
+            "is_batch": {self.is_batch}
             "_path": {self._path}
             "_working_dir": {self._working_dir}
+            "_resolved_drive_path": {self._resolved_drive_path}
         """
+
+
+    parent: str | None = None
+    is_batch: bool = False
+
+    _path: Path | None = None
+    _working_dir: Path | None = None
+    _resolved_drive_path: Path | str | None = None
 
     @property
     def path(self):
@@ -116,13 +129,25 @@ class File:
         del self._path
 
     @property
-    def working_dir(self):
+    def working_dir(self) -> Path | None:
         return self._working_dir
 
     @working_dir.setter
-    def working_dir(self, working_dir: Path):
+    def working_dir(self, working_dir: Path | None):
         self._working_dir = working_dir
 
     @working_dir.deleter
     def working_dir(self):
         del self._working_dir
+
+    @property
+    def resolved_drive_path(self) -> Path | str:
+        return self._resolved_drive_path
+
+    @resolved_drive_path.setter
+    def resolved_drive_path(self, resolved_drive_path: Path | str):
+        self._resolved_drive_path = resolved_drive_path
+
+    @resolved_drive_path.deleter
+    def resolved_drive_path(self):
+        del self._resolved_drive_path

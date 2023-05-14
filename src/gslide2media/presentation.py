@@ -5,8 +5,11 @@ from urllib.parse import urlunparse
 from urllib.parse import ParseResult as UrlParseResult
 from io import BytesIO
 import functools
+from itertools import chain
 
 import imageio
+
+from rich import print
 
 from gslide2media.slide import Slide
 from gslide2media.file import File
@@ -361,34 +364,41 @@ class Presentation:
                 for i, _ in enumerate(self.slide_ids)
             ]
 
-    def save(self, key_formats: set):
-        file = None
+    def to_file(self, key_formats: set):
         for key in key_formats:
             match key:
                 case key if key in set(ImageExportFormats):
-                    for _ in self.slides:  # type:ignore
-                        _.save(key)
+                    yield from (_.to_file(key) for _ in self.slides)  # type:ignore
+                        
                 case key if key in set(GooglePresentationExportFormats) - {
                     GooglePresentationExportFormats.JSON
                 }:
-                    file = convert_partial_to_bytes(
+                    yield convert_partial_to_bytes(
                         self.presentation_data.file_data, key  # type:ignore
                     )
                 case key if key == ExportFormats.JSON:
+                    slides_json = (_.to_file(key) for _ in self.slides)
+
                     if not self.slide_ids:
-                        file = convert_partial_to_bytes(
+                        presentation_json = iter([convert_partial_to_bytes(
                             self.presentation_data.json_data, key  # type:ignore
-                        )
-                    for _ in self.slides:  # type:ignore
-                        _.save(key)
+                        )])
+
+                        yield from chain(slides_json, presentation_json)
+                    else:
+                        yield from slides_json
+                    
                 case key if key == ExportFormats.MP4:
-                    file = convert_partial_to_bytes(
+                    yield convert_partial_to_bytes(
                         self.presentation_data.mp4_data, key  # type:ignore
                     )
                 case _:
                     raise ValueError(f"{key} is not a valid file type.")
-            if file:
-                file.save()
+
+    def save(self, key_formats: set):
+        for _ in self.to_file(key_formats):
+            _.save()
+        
 
     def get_bytes(self, key):
         match key:

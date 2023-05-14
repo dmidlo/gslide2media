@@ -49,8 +49,11 @@ class ToMedia:
         # folder_list_of_folds = Folder(presentations=[custom_presentation], presentation_ids=presentation_ids)
         # folder_list_of_folds = Folder(folder_ids=folder_ids, presentation_ids=presentation_ids)
         folder_list_of_folds = Folder(presentations=[custom_presentation], folder_ids=folder_ids, presentation_ids=presentation_ids)
-        folder_list_of_folds.recursive_save({"svg", "png", "jpeg", "json", "mp4"})
-        
+        files = folder_list_of_folds.recursive_to_file({"mp4"})
+
+        for to_file in files:
+            for _ in to_file:
+                print(_)
 
         # folder_list_of_presentations = Folder(presentation_ids=presentation_ids)
 
