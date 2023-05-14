@@ -10,12 +10,15 @@ from typing import Generator
 import sys
 
 from gslide2media.options import Options
-from gslide2media.google import GoogleClient
-from gslide2media.google import AuthGoogle
+from gslide2media.models import File
+from gslide2media.models import Folder
+from gslide2media.models import Image
+from gslide2media.models import Presentation
+from gslide2media.models import Slide
 
 from . import to_media
 
-__all__ = ["Options", "GoogleClient", "AuthGoogle"]
+__all__ = ["Options"]
 
 
 __version__ = "0.0.50"

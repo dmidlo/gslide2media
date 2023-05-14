@@ -5,9 +5,9 @@ from PIL import Image as PILImage
 
 from gslide2media.enums import ImageExportFormats
 from gslide2media.utils import dataclass_unique_instance_cache
-from gslide2media.file import File
 from gslide2media import config
 
+from .file import File
 
 @dataclass_unique_instance_cache(id_keys=["img_format", "presentation_id", "slide_id"])
 class Image:

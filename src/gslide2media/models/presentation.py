@@ -1,4 +1,3 @@
-from typing import Iterator
 from dataclasses import dataclass
 from urllib.parse import urlparse
 from urllib.parse import urlunparse
@@ -9,10 +8,6 @@ from itertools import chain
 
 import imageio
 
-from rich import print
-
-from gslide2media.slide import Slide
-from gslide2media.file import File
 from gslide2media.enums import GooglePresentationExportFormats
 from gslide2media.enums import GooglePresentationExportTypes
 from gslide2media.enums import ImageExportFormats
@@ -21,6 +16,9 @@ from gslide2media.utils import DataPartial
 from gslide2media.utils import convert_partial_to_bytes
 from gslide2media.utils import dataclass_unique_instance_cache
 from gslide2media import config
+
+from .slide import Slide
+from .file import File
 
 
 @dataclass

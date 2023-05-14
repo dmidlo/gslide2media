@@ -9,8 +9,8 @@ from gslide2media.options import Options
 
 from gslide2media import config
 from gslide2media.meta import Metadata
-from gslide2media.drive import Folder
-from gslide2media.presentation import Presentation
+from gslide2media.models import Folder
+from gslide2media.models import Presentation
 
 from gslide2media.enums import ExportFormats
 

@@ -4,8 +4,8 @@ import sys
 import argparse
 from pathlib import Path
 
+from .google_api_project import GoogleApiProject
 from gslide2media.options import Options
-from gslide2media.cli_tools.google_api_project import GoogleApiProject
 from gslide2media import config
 
 default_options = Options()

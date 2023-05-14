@@ -149,4 +149,3 @@ class Metadata:
             data = json.load(file)
 
         self(google_client_secret=data)
-        # path.unlink()

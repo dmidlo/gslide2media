@@ -1,13 +1,14 @@
 from typing import Iterator
 from typing import Generator
+
 from dataclasses import dataclass
 from itertools import chain
-from gslide2media.presentation import Presentation
+
 from gslide2media.utils import DataPartial
 from gslide2media.utils import convert_partial_to_bytes
 from gslide2media import config
 
-from rich import print
+from .presentation import Presentation
 
 
 @dataclass(slots=True, kw_only=True)

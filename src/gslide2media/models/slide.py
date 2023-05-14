@@ -8,12 +8,13 @@ from urllib.parse import ParseResult as UrlParseResult
 from gslide2media.enums import GoogleSlideExportFormats
 from gslide2media.enums import ImageExportFormats
 from gslide2media.enums import GoogleSlideExportTypes
-from gslide2media.image import Image
-from gslide2media.file import File
 from gslide2media.utils import DataPartial
 from gslide2media.utils import convert_partial_to_bytes
 from gslide2media.utils import dataclass_unique_instance_cache
 from gslide2media import config
+
+from .image import Image
+from .file import File
 
 
 @dataclass

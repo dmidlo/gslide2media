@@ -1,11 +1,7 @@
 from dataclasses import dataclass
-
 import json
-
 from io import BytesIO
 from pathlib import Path
-
-from rich import print
 
 from gslide2media.enums import ExportFormats
 from gslide2media import config
