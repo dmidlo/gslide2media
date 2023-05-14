@@ -186,7 +186,7 @@ class FetchPresentationData:
                 presentation_id=obj.presentation_id,
                 parent=self.parent,
                 presentation_name=self.presentation_name,
-                is_batch=self.is_batch
+                is_batch=self.is_batch,
             )
 
         return DataPartial(func)
@@ -232,7 +232,7 @@ class PresentationData:
             GooglePresentationExportTypes.DATA,
             self.parent,
             self.presentation_name,
-            self.is_batch
+            self.is_batch,
         )
         self.mp4_data = FetchPresentationData(
             self.presentation_id,
@@ -240,7 +240,7 @@ class PresentationData:
             GooglePresentationExportTypes.VIDEO,
             self.parent,
             self.presentation_name,
-            self.is_batch
+            self.is_batch,
         )
 
     def __iter__(self):
@@ -324,10 +324,16 @@ class Presentation:
 
     def __post_init__(self):
         if not self.is_batch and self.presentation_id and not self.slide_ids:
-            self.presentation_name = config.GOOGLE.get_presentation_name(self.presentation_id)
-            self.presentation_data = PresentationData(self.presentation_id, self.parent, self.presentation_name)
+            self.presentation_name = config.GOOGLE.get_presentation_name(
+                self.presentation_id
+            )
+            self.presentation_data = PresentationData(
+                self.presentation_id, self.parent, self.presentation_name
+            )
         else:
-            self.presentation_data = PresentationData(self.presentation_id, self.parent, self.presentation_name, self.is_batch)
+            self.presentation_data = PresentationData(
+                self.presentation_id, self.parent, self.presentation_name, self.is_batch
+            )
 
         self.populate_slides()
         self.presentation_data.mp4_data.mp4 = self.presentation_data.mp4_data.mp4(
@@ -336,7 +342,9 @@ class Presentation:
 
     def populate_slides(self):
         if self.slide_ids is None:
-            self.presentation_data.json_data.json = convert_partial_to_bytes(self.presentation_data.json_data, GooglePresentationExportFormats.JSON)
+            self.presentation_data.json_data.json = convert_partial_to_bytes(
+                self.presentation_data.json_data, GooglePresentationExportFormats.JSON
+            )
             self.slides = [
                 Slide(
                     slide_id=slide["objectId"],
@@ -369,7 +377,7 @@ class Presentation:
             match key:
                 case key if key in set(ImageExportFormats):
                     yield from (_.to_file(key) for _ in self.slides)  # type:ignore
-                        
+
                 case key if key in set(GooglePresentationExportFormats) - {
                     GooglePresentationExportFormats.JSON
                 }:
@@ -380,14 +388,18 @@ class Presentation:
                     slides_json = (_.to_file(key) for _ in self.slides)
 
                     if not self.slide_ids:
-                        presentation_json = iter([convert_partial_to_bytes(
-                            self.presentation_data.json_data, key  # type:ignore
-                        )])
+                        presentation_json = iter(
+                            [
+                                convert_partial_to_bytes(
+                                    self.presentation_data.json_data, key  # type:ignore
+                                )
+                            ]
+                        )
 
                         yield from chain(slides_json, presentation_json)
                     else:
                         yield from slides_json
-                    
+
                 case key if key == ExportFormats.MP4:
                     yield convert_partial_to_bytes(
                         self.presentation_data.mp4_data, key  # type:ignore
@@ -398,7 +410,6 @@ class Presentation:
     def save(self, key_formats: set):
         for _ in self.to_file(key_formats):
             _.save()
-        
 
     def get_bytes(self, key):
         match key:

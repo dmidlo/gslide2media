@@ -56,7 +56,9 @@ class File:
             self.resolved_drive_path = "gslide2media"
             drive_path = self.resolved_drive_path
         else:
-            self.resolved_drive_path = config.GOOGLE.resolve_drive_file_path_to_root(self.presentation_id)
+            self.resolved_drive_path = config.GOOGLE.resolve_drive_file_path_to_root(
+                self.presentation_id
+            )
             drive_path = self.resolved_drive_path.name_path
 
         if self.slide_id:
@@ -107,7 +109,6 @@ class File:
             "_working_dir": {self._working_dir}
             "_resolved_drive_path": {self._resolved_drive_path}
         """
-
 
     parent: str | None = None
     is_batch: bool = False

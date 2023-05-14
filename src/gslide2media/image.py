@@ -30,7 +30,7 @@ class Image:
             presentation_order=self.presentation_order,
             presentation_name=self.presentation_name,
             parent=self.parent,
-            is_batch=self.is_batch
+            is_batch=self.is_batch,
         )
 
     def to_png(self):
@@ -111,5 +111,5 @@ class Image:
             is_composite=self.is_composite,
             parent=self.parent,
             presentation_name=self.presentation_name,
-            is_batch=self.is_batch
+            is_batch=self.is_batch,
         )

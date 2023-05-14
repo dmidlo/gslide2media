@@ -52,7 +52,12 @@ class Folder:
             return cls._instances[instance_id]
 
     def __post_init__(self):
-        if self is self.get_root_folder() and not self.presentation_ids and not self.folder_ids and not self.presentations:
+        if (
+            self is self.get_root_folder()
+            and not self.presentation_ids
+            and not self.folder_ids
+            and not self.presentations
+        ):
             self.folder_id = "root"
             self.folder_name = "root"
             self.folders = self.get_folders_in_root_partial()
@@ -173,9 +178,11 @@ class Folder:
                 )
 
                 if self.custom_presentations:
-                    presentations_from_ids = chain(presentations_from_ids, iter(self.custom_presentations))
+                    presentations_from_ids = chain(
+                        presentations_from_ids, iter(self.custom_presentations)
+                    )
                 return presentations_from_ids
-            
+
             elif self.custom_presentations:
                 return iter(self.custom_presentations)
 
@@ -227,14 +234,12 @@ class Folder:
                 return
 
         yield from func()
-            
 
     def save(self, key_formats: set):
         for _ in convert_partial_to_bytes(self, "presentations"):
             _.save(key_formats)
 
     def recursive_save(self, key_formats: set):
-
         def func(folder=None, level=0):
             if folder is None:
                 folder = self
@@ -248,7 +253,7 @@ class Folder:
 
             if level == 0:
                 return True
-            
+
         return func()
 
     @property

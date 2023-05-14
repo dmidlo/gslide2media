@@ -98,7 +98,7 @@ class SlideExportUrls:
             presentation_order=self.presentation_order,
             parent=self.parent,
             presentation_name=self.presentation_name,
-            is_batch=self.is_batch
+            is_batch=self.is_batch,
         )
 
 
@@ -159,7 +159,7 @@ class FetchSlideData:
                 presentation_order=obj.presentation_order,
                 parent=self.parent,
                 presentation_name=self.presentation_name,
-                is_batch=self.is_batch
+                is_batch=self.is_batch,
             )
 
         return DataPartial(func)(obj=self)
@@ -188,7 +188,13 @@ class SlideData:
 
     def __post_init__(self) -> None:
         self.slide_image_urls: SlideExportUrls = SlideExportUrls(
-            self.slide_id, self.presentation_id, self.presentation_order, self.parent, self.presentation_name, self.is_composite, self.is_batch
+            self.slide_id,
+            self.presentation_id,
+            self.presentation_order,
+            self.parent,
+            self.presentation_name,
+            self.is_composite,
+            self.is_batch,
         )
         self.image_data = FetchSlideData(
             self.slide_id,
@@ -197,7 +203,9 @@ class SlideData:
             GoogleSlideExportTypes.IMAGE,
             self.presentation_order,
             self.parent,
-            self.presentation_name, self.is_composite, self.is_batch
+            self.presentation_name,
+            self.is_composite,
+            self.is_batch,
         )
         self.json_data = FetchSlideData(
             self.slide_id,
@@ -206,7 +214,9 @@ class SlideData:
             GoogleSlideExportTypes.DATA,
             self.presentation_order,
             self.parent,
-            self.presentation_name, self.is_composite, self.is_batch
+            self.presentation_name,
+            self.is_composite,
+            self.is_batch,
         )
 
     def __iter__(self):
@@ -265,7 +275,13 @@ class Slide:
 
     def __post_init__(self) -> None:
         self.slide_data: SlideData = SlideData(
-            self.slide_id, self.presentation_id, self.presentation_order, self.parent, self.presentation_name, self.is_composite, self.is_batch
+            self.slide_id,
+            self.presentation_id,
+            self.presentation_order,
+            self.parent,
+            self.presentation_name,
+            self.is_composite,
+            self.is_batch,
         )
 
     def __call__(self, presentation_order: int | None = None):
