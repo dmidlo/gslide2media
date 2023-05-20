@@ -19,6 +19,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from gslide2media.options import Options
 from gslide2media.cli.tools import OptionsHistory
 from gslide2media.cli.tools import options_name_dialog
+from gslide2media.cli.tools import options_clear_confirm
 from gslide2media.cli.modifiers import _fix_path_strings
 from gslide2media.enums import OptionsTimeAttrs
 
@@ -227,3 +228,18 @@ class Metadata:
                 self.options_history.remove(trash_option_set)
         self.write()
         raise SystemExit("options set removed.")
+    
+    def clear_options_history(self, options_set: Options) -> None:
+        if len(self.options_history) > 0:
+            if options_set.clear_force:
+                self.options_history = set()
+            else:
+                if options_clear_confirm():
+                    self.options_history = set()
+                else:
+                    raise SystemExit("aborted.")
+            self.write()
+        else:
+            raise SystemExit("No records in options history.")
+     
+        raise SystemExit("reset options history.")

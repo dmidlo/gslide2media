@@ -36,6 +36,7 @@ class Options:
     _options_max_history: int | None = None  # excludes named option sets and generic commands that manuipulate the options object.
     _remove_history_option: bool = False
     _clear_history: bool = False
+    clear_force: bool = False
 
     _interactive: bool = False
     _from_api: bool = False
@@ -66,6 +67,7 @@ class Options:
                                 "_options_max_history",
                                 "_remove_history_option",
                                 "_clear_history",
+                                "clear_force"
                                 "_interactive",
                                 "_from_api",
                                 "_tool_auth_google_api_project",
@@ -84,7 +86,7 @@ class Options:
         # if it's a named option set, __eq__ and __hash__ are calculated on just the name,
         # whereas unnnamed option sets are calculated on the hash 
         # of self minus self._comp_excluded_attrs.
-        
+
         if self.options_set_name:
             return hash(self.options_set_name)
 

@@ -65,3 +65,10 @@ def options_name_dialog(options_set: Options) -> str:
         message="Enter a label name:",
         #TODO:  completer={}
     ).execute().strip().replace(" ", "-")
+
+
+def options_clear_confirm():
+    return inquirer.confirm(
+            message="Reset options history?",
+            default=True,
+        ).execute()

@@ -51,6 +51,8 @@ class ArgParser(argparse.ArgumentParser):
         # update_options_history()  this will be in modifiers.
         if self.arg_namespace._remove_history_option:
             config.META.remove_options_set(self.arg_namespace)
+        if self.arg_namespace._clear_history:
+            config.META.clear_options_history(self.arg_namespace)
         config.META.add_option_set(self.arg_namespace)
 
         return self.arg_namespace
@@ -180,6 +182,7 @@ class ArgParser(argparse.ArgumentParser):
         self._add_standard_args(self)
         self._add_options_history_args(self.history_parser)
         self._add_options_history_args(self.history_remove)
+        self._add_clear_force_arg(self.history_clear)
 
     def _prepare_from_api_args(self):
         """Build the args list from api Options.
@@ -426,11 +429,13 @@ class ArgParser(argparse.ArgumentParser):
             ),
         )
 
+    def _add_clear_force_arg(self, parser: argparse.ArgumentParser):
         parser.add_argument(
             "--force",
             action="store_true",
             help=(
                 "call gslide2media with a Named Option Set."
             ),
+            dest="clear_force"
         )
 
