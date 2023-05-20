@@ -17,6 +17,8 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from gslide2media.options import Options
+from gslide2media.cli.tools import OptionsHistory
+from gslide2media.cli.tools import options_name_dialog
 from gslide2media.cli.modifiers import _fix_path_strings
 from gslide2media.enums import OptionsTimeAttrs
 
@@ -152,8 +154,10 @@ class Metadata:
 
         self(google_client_secret=data)
 
-    def add_option_set(self, options_set: Options, options_set_name: str=None):
-        if not options_set == _fix_path_strings(Options()):
+    def add_option_set(self, options_set: Options):
+
+        if options_set != _fix_path_strings(Options()) or isinstance(options_set.set_label, bool):
+            options_set = self.set_options_name(options_set)
             options_set.mark_time(OptionsTimeAttrs.LAST_USED)
 
             if options_set in self.options_history:
@@ -161,6 +165,21 @@ class Metadata:
             self.options_history.add(options_set)
 
         self.enforce_unnamed_option_sets_limit()
+
+    def set_options_name(self, options_set: Options) -> Options:
+        if options_set.set_label:
+            if isinstance(options_set.set_label, bool):
+                options_set = OptionsHistory()()
+                self.options_history.remove(options_set)
+                options_set._options_set_name = options_name_dialog(options_set)
+
+            if isinstance(options_set.set_label, str):
+                self.options_history.remove(options_set)
+                options_set._options_set_name = options_set.set_label.strip().replace(" ", "-")
+
+            options_set.set_label = None
+            options_set.mark_time(OptionsTimeAttrs.MODIFY)
+        return options_set
 
     def collate_named_and_unnamed_option_sets(self) -> tuple:
         named_sets: list = []
@@ -173,7 +192,7 @@ class Metadata:
                 unnamed_sets.append(_)
 
         return named_sets, unnamed_sets
-    
+
     def enforce_unnamed_option_sets_limit(self) -> None:
         named_sets, unnamed_sets = self.collate_named_and_unnamed_option_sets()
 

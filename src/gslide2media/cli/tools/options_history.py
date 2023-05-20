@@ -58,3 +58,10 @@ class OptionsHistory:
             f"    Image:    jpeg_quality: {options_set.jpeg_quality}\n"
             f"    API:      save_to_file: {options_set.save_to_file}\n"
         )
+
+
+def options_name_dialog(options_set: Options) -> str:
+    return inquirer.text(
+        message="Enter a label name:",
+        #TODO:  completer={}
+    ).execute().strip().replace(" ", "-")

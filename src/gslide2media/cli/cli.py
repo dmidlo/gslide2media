@@ -45,8 +45,6 @@ class ArgParser(argparse.ArgumentParser):
         _check_should_print_help(self)
         self.arg_namespace = _check_for_tools_and_run(self.arg_namespace)
         self._sanitize_input()
-
-        self.arg_namespace.presentation_id = ["16"]
         config.META.add_option_set(self.arg_namespace)
 
         return self.arg_namespace
