@@ -5,32 +5,14 @@ from typing import NamedTuple
 from googleapiclient.errors import HttpError
 from pathlib import Path
 
-from gslide2media.google.auth import AuthGoogle
-from gslide2media.options import Options
 from gslide2media import config
+
+from .auth import AuthGoogle
 
 
 class GoogleClient:
-    def __init__(self, options: Options) -> None:
-        self.options = options
-
+    def __init__(self) -> None:
         self.auth_google: AuthGoogle = AuthGoogle(config.API_SCOPES)
-        self.presentations_from_drive_folder: list = (
-            self.get_presentations_from_drive_folder(folder_id=self.options.folder_id)
-        )
-        self.root_folder_id = self.get_folders_in_root()
-
-    @property
-    def options(self) -> Options:
-        return self._options
-
-    @options.setter
-    def options(self, options: Options) -> None:
-        self._options = options
-
-    @options.deleter
-    def options(self) -> None:
-        del self._options
 
     @property
     def auth_google(self) -> AuthGoogle:
@@ -43,30 +25,6 @@ class GoogleClient:
     @auth_google.deleter
     def auth_google(self) -> None:
         del self._auth_google
-
-    @property
-    def presentations_from_drive_folder(self) -> Optional[list[dict]]:
-        return self._presentations_from_drive_folder
-
-    @presentations_from_drive_folder.setter
-    def presentations_from_drive_folder(self, presentations_from_drive_folder):
-        self._presentations_from_drive_folder = presentations_from_drive_folder
-
-    @presentations_from_drive_folder.deleter
-    def presentations_from_drive_folder(self):
-        del self._presentations_from_drive_folder
-
-    @property
-    def root_folder_id(self) -> str:
-        return self._root_folder_id
-
-    @root_folder_id.setter
-    def root_folder_id(self, root_folder_id: str):
-        self._root_folder_id: str = root_folder_id
-
-    @root_folder_id.deleter
-    def root_folder_id(self):
-        del self._root_folder_id
 
     def get_google_drive_folder(self, folder_id: str) -> dict:
         return (

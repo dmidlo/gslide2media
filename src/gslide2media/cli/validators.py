@@ -1,0 +1,47 @@
+from pathlib import Path
+import sys
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from .cli import ArgParser
+
+def _check_should_print_help(obj: "ArgParser"):
+    if not obj.arg_namespace._from_api:
+        if len(sys.argv) == 1:
+            obj.print_help(sys.stdout)
+            raise SystemExit(0)
+
+        if sys.argv[1] == "auth":
+            if len(sys.argv) == 2:
+                obj.auth_parser.print_help()
+                raise SystemExit
+
+            if sys.argv[2] == '-h' or sys.argv[2] == "--help":
+                obj.auth_parser.print_help()
+                raise SystemExit
+
+
+def _check_for_at_least_one_source():
+    ...
+
+def _check_int_or_none(value) -> int | None:
+    return None if value.lower() == "none" else int(value)
+
+
+def _check_string_is_pathlike(string: str) -> None | str:
+    try:
+        Path(string)  # noqa:F841
+    except (TypeError, ValueError) as err:
+        raise ValueError("directory or file path is not pathlike.") from err
+
+    return string  # type:ignore
+
+
+def _check_allow_only_mp4_slide_or_total_duration_not_both(
+    mp4_slide_duration_secs: int, mp4_total_duration_secs: int
+):
+    if mp4_slide_duration_secs and mp4_total_duration_secs:
+        raise ValueError(
+            "Must Specify either 'mp4_slide_duration_secs' or 'mp4_total_video_duration', "
+            "but not both."
+        )

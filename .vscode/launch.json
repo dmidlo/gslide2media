@@ -9,6 +9,9 @@
             "type": "python",
             "request": "launch",
             "module": "gslide2media",
+            "args": [
+                "interactive"
+            ],
             "justMyCode": true
         }
     ]

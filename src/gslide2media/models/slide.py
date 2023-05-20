@@ -169,9 +169,9 @@ class FetchSlideData:
         if export_type is GoogleSlideExportTypes.IMAGE:
             for _ in set(ImageExportFormats):
                 setattr(self, _, self.slide_image_urls[_])
-                self.__annotations__[_.lower()] = type(
+                self.__annotations__[_.lower()] = type(  # pylint: disable=no-member
                     functools.partial
-                )  # pylint: disable=no-member
+                )
         elif export_type is GoogleSlideExportTypes.DATA:
             setattr(self, "json", self.get_json_slide_data())
             self.__annotations__["json"] = dict  # pylint: disable=no-member

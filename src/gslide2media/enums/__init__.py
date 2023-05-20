@@ -7,6 +7,9 @@ from .export_formats import (
     ExportFormats,
 )
 from .drive_types import DriveTypes
+from .options import OptionsSource
+from .options import OptionsTimeAttrs
+
 
 __all__ = [
     "GooglePresentationExportFormats",
@@ -16,4 +19,6 @@ __all__ = [
     "ImageExportFormats",
     "ExportFormats",
     "DriveTypes",
+    "OptionsSource",
+    "OptionsTimeAttrs",
 ]

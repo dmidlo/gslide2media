@@ -18,7 +18,7 @@ from gslide2media.models import Slide
 
 from . import to_media
 
-__all__ = ["Options"]
+__all__ = ["Options", "File", "Folder", "Image", "Presentation", "Slide"]
 
 
 __version__ = "0.0.50"

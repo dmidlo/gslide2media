@@ -10,9 +10,7 @@ import functools
 from typing import NamedTuple
 from typing import Callable
 from typing import List
-from dataclasses import dataclass, _process_class  # type:ignore
-
-from gslide2media.enums import ExportFormats
+from dataclasses import dataclass, asdict, _process_class  # type:ignore
 
 
 def partial_decorator(*args, **kwargs):
@@ -31,11 +29,11 @@ def create_partial(func, *args, **kwargs):
 @dataclass
 class DataPartial:
     fmt_fnc: Callable
-    key: ExportFormats | str = "get"
+    key: str = "get"
 
     def __post_init__(self):
         self.partial_keys = [(self.key.lower(), type(functools.partial))]
-        self.partial = NamedTuple("NamedTuple", self.partial_keys)
+        self.partial = NamedTuple("_DataPartial", self.partial_keys)
 
     def __call__(self, **kwargs):
         dict_data = {self.key: create_partial(self.fmt_fnc, **kwargs)}
@@ -89,23 +87,34 @@ def dataclass_unique_instance_cache(
             _ if _ in set(cls.__dataclass_fields__) else False for _ in id_keys
         )
 
-        if not id_keys_is_list_of_strings or not id_keys_are_valid:
+        if not id_keys_is_list_of_strings:
             raise ValueError(
                 "dataclass_unique_instance_cache: requires [list] of 'params' to use as identifiers."
+            )
+
+        if not id_keys_are_valid:
+            raise ValueError(
+                "dataclass_unique_instance_cache: Invalid id_keys.  id_keys not dataclass field."
             )
 
         cls._instances = {}
 
         def new(cls, *args, **kwargs):
+            # to make this decorator more generic.
             instance_id = tuple(kwargs[_] for _ in id_keys)
+
             if instance_id not in cls._instances:
-                cls._instances[instance_id] = super(cls, cls).__new__(
+                cls._instances[instance_id] = super(cls, cls).__new__(  # pylint: disable=no-value-for-parameter
                     cls
-                )  # pylint: disable=no-value-for-parameter
+                )
 
             return cls._instances[instance_id]
+        
+        def to_dict(cls):
+            return asdict(cls)
 
         setattr(cls, "__new__", new)
+        setattr(cls, "to_dict", to_dict)
         return cls
 
     if cls is None:

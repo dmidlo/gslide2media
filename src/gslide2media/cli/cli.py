@@ -1,14 +1,19 @@
-from typing import Optional
-
 import sys
 import argparse
-from pathlib import Path
 
-from .google_api_project import GoogleApiProject
 from gslide2media.options import Options
+from gslide2media.enums import OptionsSource
 from gslide2media import config
 
-default_options = Options()
+from .validators import _check_int_or_none
+from .validators import _check_string_is_pathlike
+from .validators import _check_allow_only_mp4_slide_or_total_duration_not_both
+from .validators import _check_should_print_help
+from .modifiers import _check_for_tools_and_run
+from .modifiers import _fix_path_strings
+from .modifiers import _set_screen_dimensions
+
+default_options = Options(_options_source=OptionsSource.DEFAULT)
 
 
 class ArgParser(argparse.ArgumentParser):
@@ -17,7 +22,7 @@ class ArgParser(argparse.ArgumentParser):
         self.max_help_position = 140
         super().__init__(
             prog=prog,
-            usage="gslide2media {img, mp4} {presentation, folder} [options]",
+            usage="\n  gslide2media [options]\n  gslide2media interactive [options]\n  gslide2media history [args|command]\n  gslide2media auth [command]",
             formatter_class=lambda prog: argparse.HelpFormatter(
                 prog=prog,
                 width=self.formatter_width,
@@ -37,125 +42,18 @@ class ArgParser(argparse.ArgumentParser):
         """
 
         self._set_args()
-        self._check_for_tools_and_run()
+        _check_should_print_help(self)
+        self.arg_namespace = _check_for_tools_and_run(self.arg_namespace)
         self._sanitize_input()
-        self._fix_path_strings()
+
+        self.arg_namespace.presentation_id = ["16"]
+        config.META.add_option_set(self.arg_namespace)
+
         return self.arg_namespace
 
     def _build_parser(self):
         self.subparsers = self.add_subparsers(
             title="Available Commands", parser_class=argparse.ArgumentParser, metavar=""
-        )
-
-        self.img_parser = self.subparsers.add_parser(
-            "img",
-            help=(
-                "command for exporting google slides presentation(s) as (an) image(s). "
-                "svg, png, or jpeg"
-            ),
-            usage="gslide2media img {presentation, folder} [options]",
-            formatter_class=lambda prog: argparse.HelpFormatter(
-                prog=prog,
-                width=self.formatter_width,
-                max_help_position=self.max_help_position,
-            ),
-        )
-        self.img_parser.set_defaults(create_images=True)
-
-        self.mp4_parser = self.subparsers.add_parser(
-            "mp4",
-            help=(
-                "command for exporting google slides presentation(s) as (an) mp4(s)."
-            ),
-            usage="gslide2media mp4 {presentation, folder} [options]",
-            formatter_class=lambda prog: argparse.HelpFormatter(
-                prog=prog,
-                width=self.formatter_width,
-                max_help_position=self.max_help_position,
-            ),
-        )
-        self.mp4_parser.set_defaults(create_mp4s=True)
-
-        self.img_subparsers = self.img_parser.add_subparsers(
-            title="slide source", parser_class=argparse.ArgumentParser, metavar=""
-        )
-        self.mp4_subparsers = self.mp4_parser.add_subparsers(
-            title="slide source", parser_class=argparse.ArgumentParser, metavar=""
-        )
-
-        self.img_folder_parser = self.img_subparsers.add_parser(
-            "folder",
-            help=(
-                "command for exporting a all slides presentations from a google drive "
-                "folder as directories of sorted images. svg, png, jpeg."
-            ),
-            usage=(
-                "gslide2image img folder [-h] -i FOLDER_ID [-r] [--save-images-to-file] [-f "
-                "{svg,png,jpeg}] [-d DOWNLOAD_DIRECTORY] [--aspect-ratio ASPECT_RATIO][--dpi DPI] "
-                "[--screen-width SCREEN_WIDTH] [--screen-height SCREEN_HEIGHT] "
-                "[--credentials-pattern CREDENTIALS_PATTERN][--credentials-file CREDENTIALS_FILE] "
-                "[--token-pattern TOKEN_PATTERN] [--token-file TOKEN_FILE]"
-            ),
-            formatter_class=lambda prog: argparse.HelpFormatter(
-                prog=prog,
-                width=self.formatter_width,
-                max_help_position=self.max_help_position,
-            ),
-        )
-        self.img_presentation_parser = self.img_subparsers.add_parser(
-            "presentation",
-            help=(
-                "command for exporting the slides of a google slides presentation as "
-                "individual images. in svg, png, or jpeg"
-            ),
-            usage=(
-                "gslide2media img presentation [-h] [-i, PRESENTATION_ID] "
-                "[--save-images-to-file] [-f {svg,png,jpeg}] [-d DOWNLOAD_DIRECTORY] "
-                "[--aspect-ratio ASPECT_RATIO] [--dpi DPI] [--screen-width SCREEN_WIDTH] "
-                "[--screen-height SCREEN_HEIGHT] [--credentials-pattern CREDENTIALS_PATTERN] "
-                "[--credentials-file CREDENTIALS_FILE] [--token-pattern TOKEN_PATTERN] "
-                "[--token-file TOKEN_FILE]"
-            ),
-            formatter_class=lambda prog: argparse.HelpFormatter(
-                prog=prog,
-                width=self.formatter_width,
-                max_help_position=self.max_help_position,
-            ),
-        )
-        self.mp4_folder_parser = self.mp4_subparsers.add_parser(
-            "folder",
-            help=(
-                "command for exporting a all slides presentations from a google drive "
-                "folder as directories of sorted mp4s."
-            ),
-            usage=(
-                "gslide2image mp4 folder [-h] -i FOLDER_ID [-r] [--save-images-to-file] "
-                "[-s MP4_SLIDE_DURATION_SECS] [-t MP4_TOTAL_VIDEO_DURATION] [-d "
-                "DOWNLOAD_DIRECTORY] [--aspect-ratio ASPECT_RATIO] [--dpi DPI] [--screen-width "
-                "SCREEN_WIDTH] [--screen-height SCREEN_HEIGHT]"
-            ),
-            formatter_class=lambda prog: argparse.HelpFormatter(
-                prog=prog,
-                width=self.formatter_width,
-                max_help_position=self.max_help_position,
-            ),
-        )
-        self.mp4_presentation_parser = self.mp4_subparsers.add_parser(
-            "presentation",
-            help=(
-                "command for exporting the slides of a google slides presentation as an mp4 video."
-            ),
-            usage=(
-                "gslide2image mp4 presentation [-h] [-i, PRESENTATION_ID] "
-                "[--save-images-to-file] [-s MP4_SLIDE_DURATION_SECS] [-t "
-                "MP4_TOTAL_VIDEO_DURATION] [-d DOWNLOAD_DIRECTORY] [--aspect-ratio ASPECT_RATIO]"
-                " [--dpi DPI] [--screen-width SCREEN_WIDTH] [--screen-height SCREEN_HEIGHT]"
-            ),
-            formatter_class=lambda prog: argparse.HelpFormatter(
-                prog=prog,
-                width=self.formatter_width,
-                max_help_position=self.max_help_position,
-            ),
         )
 
         self.interactive_parser = self.subparsers.add_parser(
@@ -168,98 +66,115 @@ class ArgParser(argparse.ArgumentParser):
                 max_help_position=self.max_help_position,
             ),
         )
-        self.interactive_parser.set_defaults(interactive=True)
+        self.interactive_parser.set_defaults(_interactive=True)
 
-        self.generate_parser = self.subparsers.add_parser(
-            "generate",
-            help=("various generate helpful for the use of gslide2media."),
-            usage="gslide2media generate [command]",
+        self.history_parser = self.subparsers.add_parser(
+            "history",
+            help="start gslide2media with a previously used options set",
+            usage="gslide2media history",
             formatter_class=lambda prog: argparse.HelpFormatter(
                 prog=prog,
                 width=self.formatter_width,
                 max_help_position=self.max_help_position,
             ),
         )
-        self.generate_subparsers = self.generate_parser.add_subparsers(
-            title="Categories", parser_class=argparse.ArgumentParser, metavar=""
-        )
-        self.generate_auth_google_api_project_parser = self.generate_subparsers.add_parser(
-            "google-client-secret",
+
+        self.history_subparsers = self.history_parser.add_subparsers(title="commands", parser_class=argparse.ArgumentParser, metavar="")
+
+        self.history_set_label = self.history_subparsers.add_parser(
+            "set-label",
             help=(
-                "Opens Instructions in default web browser on how to set up a google api project "
-                "and download a client_secret*.json file."
+                "Add a label to to an options set to create a named option set using an interactive prompt."
             ),
-            usage="gslide2media generate auth google-client-secret",
+            usage="\n  gslide2media history set-label",
             formatter_class=lambda prog: argparse.HelpFormatter(
                 prog=prog,
                 width=self.formatter_width,
                 max_help_position=self.max_help_position,
             ),
-        )
-        self.generate_auth_google_api_project_parser.set_defaults(
-            tool_auth_google_api_project=True
-        )
 
-        self.toots_auth_google_generate_and_refresh_token_parser = self.generate_subparsers.add_parser(
-            "google-token",
+        )
+        self.history_set_label.set_defaults(set_label=True)
+
+        self.history_remove = self.history_subparsers.add_parser(
+            "remove",
             help=(
-                "Generates a new or refreshes an existing token.json.  If one doesn't already "
-                "exist, a google OAuth workflow is initiated using the default web browser."
+                "Remove an Options Set from history."
             ),
-            usage="gslide2media generate auth google-token",
+            usage="\n  gslide2media history remove\n  gslide2media history remove <NamedOptionSet>\n accepts --force to skip confirm.",
+            formatter_class=lambda prog: argparse.HelpFormatter(
+                prog=prog,
+                width=self.formatter_width,
+                max_help_position=self.max_help_position,
+            ),
+
+        )
+        self.history_remove.set_defaults(_remove_history_option=True)
+
+        self.history_clear = self.history_subparsers.add_parser(
+            "clear",
+            help=(
+                "Clears Options history."
+            ),
+            usage="\n  gslide2media history clear\n  gslide2media history clear --force",
+            formatter_class=lambda prog: argparse.HelpFormatter(
+                prog=prog,
+                width=self.formatter_width,
+                max_help_position=self.max_help_position,
+            ),
+
+        )
+        self.history_clear.set_defaults(_clear_history=True)
+
+        self.auth_parser = self.subparsers.add_parser(
+            "auth",
+            help=("Configure authorization for Google APIs."),
+            usage="gslide2media auth [command]",
             formatter_class=lambda prog: argparse.HelpFormatter(
                 prog=prog,
                 width=self.formatter_width,
                 max_help_position=self.max_help_position,
             ),
         )
-        self.toots_auth_google_generate_and_refresh_token_parser.set_defaults(
-            tool_google_auth_token=True
+
+        self.auth_subparsers = self.auth_parser.add_subparsers(
+            title="Auth Tools", parser_class=argparse.ArgumentParser, metavar=""
+        )
+        self.tool_auth_google_api_project_parser = self.auth_subparsers.add_parser(
+            "wizard",
+            help=(
+                "A CLI-based walk-through for the process of creating a Google Developer project, generating a client_secret*.json, and importing it to gslide2media."
+            ),
+            usage="gslide2media auth wizard",
+            formatter_class=lambda prog: argparse.HelpFormatter(
+                prog=prog,
+                width=self.formatter_width,
+                max_help_position=self.max_help_position,
+            ),
+        )
+        self.tool_auth_google_api_project_parser.set_defaults(
+            _tool_auth_google_api_project=True
         )
 
-        self.import_parser = self.subparsers.add_parser(
+        self.tool_import_client_secret_parser = self.auth_subparsers.add_parser(
             "import",
-            help="import google auth credentials.",
-            usage="gslide2media import [command]",
-            formatter_class=lambda prog: argparse.HelpFormatter(
-                prog=prog,
-                width=self.formatter_width,
-                max_help_position=self.max_help_position,
-            ),
-        )
-        self.import_subparsers = self.import_parser.add_subparsers(
-            title="import", parser_class=argparse.ArgumentParser, metavar=""
-        )
-        self.import_auth_google_api_project_parser = self.import_subparsers.add_parser(
-            "google-client-secret",
             help=(
-                "Opens Instructions in default web browser on how to set up a google api project "
-                "and download a client_secret*.json file."
+                "Import a Google Developer project's client_secret*.json."
             ),
-            usage="gslide2media generate auth google-client-secret",
+            usage="gslide2media auth import",
             formatter_class=lambda prog: argparse.HelpFormatter(
                 prog=prog,
                 width=self.formatter_width,
                 max_help_position=self.max_help_position,
             ),
+        )
+        self.tool_import_client_secret_parser.set_defaults(
+            _tool_import_client_secret=True
         )
 
     def _set_args(self):
-        self._add_folder_args(self.img_folder_parser)
-        self._add_image_args(self.img_folder_parser)
-        self._add_standard_args(self.img_folder_parser)
-
-        self._add_presentation_args(self.img_presentation_parser)
-        self._add_image_args(self.img_presentation_parser)
-        self._add_standard_args(self.img_presentation_parser)
-
-        self._add_folder_args(self.mp4_folder_parser)
-        self._add_mp4_args(self.mp4_folder_parser)
-        self._add_standard_args(self.mp4_folder_parser)
-
-        self._add_presentation_args(self.mp4_presentation_parser)
-        self._add_mp4_args(self.mp4_presentation_parser)
-        self._add_standard_args(self.mp4_presentation_parser)
+        self._add_standard_args(self)
+        self._add_options_history_args(self.history_parser)
 
     def _prepare_from_api_args(self):
         """Build the args list from api Options.
@@ -268,10 +183,6 @@ class ArgParser(argparse.ArgumentParser):
             list: args
         """
         args = []
-        if self.arg_namespace.create_images:
-            args.append("img")
-        elif self.arg_namespace.create_mp4s:
-            args.append("mp4")
         if self.arg_namespace.folder_id:
             args.append("folder")
             args.extend(["--folder-id", self.arg_namespace.folder_id])
@@ -339,142 +250,94 @@ class ArgParser(argparse.ArgumentParser):
         return args
 
     def _sanitize_input(self):
-        self._check_should_print_help()
 
-        self.check_allow_only_presentation_or_folder_not_both(
-            self.arg_namespace.folder_id, self.arg_namespace.presentation_id
-        )
-
-        (
-            self.arg_namespace.screen_width,
-            self.arg_namespace.screen_height,
-        ) = self.set_screen_dimensions(
-            self.arg_namespace.aspect_ratio,
-            self.arg_namespace.screen_width,
-            self.arg_namespace.screen_height,
-        )
-
-        self.check_allow_only_create_images_or_mp4_not_both(
-            self.arg_namespace.create_images, self.arg_namespace.create_mp4s
-        )
-
-        self.check_allow_only_mp4_slide_or_total_duration_not_both(
+        # Pre-parse
+        _check_allow_only_mp4_slide_or_total_duration_not_both(
             self.arg_namespace.mp4_slide_duration_secs,
             self.arg_namespace.mp4_total_video_duration,
         )
 
-        if "gslide2media" not in sys.argv[0] and self.arg_namespace.from_api:
+        # Parse
+        if "gslide2media" not in sys.argv[0] and self.arg_namespace._from_api:
             args = self._prepare_from_api_args()
             self.parse_args(args, namespace=self.arg_namespace)
         else:
             # Get the args from sys.argv
             self.parse_args(namespace=self.arg_namespace)
 
-    def _check_for_tools_and_run(self):
-        if len(sys.argv) >= 2 and len(sys.argv) <= 3:
-            if sys.argv[1] == "generate":
-                if len(sys.argv) == 3:
-                    if sys.argv[2] == "google-client-secret":
-                        self.arg_namespace.tool_auth_google_api_project = True
-                        client_secret_path = GoogleApiProject()()
-                        config.META.import_google_client_secret_json(client_secret_path)
-                        Path(client_secret_path).unlink()
-                    elif sys.argv[2] == "google-token":
-                        self.arg_namespace.tool_google_auth_token = True
-                    raise SystemExit
+        # Post-Parse
+        (
+            self.arg_namespace.screen_width,
+            self.arg_namespace.screen_height,
+        ) = _set_screen_dimensions(
+            self.arg_namespace.aspect_ratio,
+            self.arg_namespace.screen_width,
+            self.arg_namespace.screen_height,
+        )
 
-    def _check_should_print_help(self):
-        if not self.arg_namespace.from_api:
-            if len(sys.argv) == 1:
-                self.print_help(sys.stdout)
-                raise SystemExit(0)
-
-            if len(sys.argv) == 2:
-                if sys.argv[1] == "img":
-                    self.img_parser.print_help(sys.stdout)
-                elif sys.argv[1] == "mp4":
-                    self.mp4_parser.print_help(sys.stdout)
-                elif sys.argv[1] == "generate":
-                    self.generate_parser.print_help(sys.stdout)
-                elif sys.argv[1] == "import":
-                    self.import_parser.print_help(sys.stdout)
-                raise SystemExit
-
-            if len(sys.argv) >= 2 and len(sys.argv) <= 3:
-                if sys.argv[1] == "img":
-                    if sys.argv[2] == "folder":
-                        self.img_folder_parser.print_help()
-                    elif sys.argv[2] == "presentation":
-                        self.img_presentation_parser.print_help()
-                elif sys.argv[1] == "mp4":
-                    if sys.argv[2] == "folder":
-                        self.mp4_folder_parser.print_help()
-                    elif sys.argv[2] == "presentation":
-                        self.mp4_presentation_parser.print_help()
-                raise SystemExit
+        self.arg_namespace = _fix_path_strings(self.arg_namespace)
 
     def _add_standard_args(self, parser: argparse.ArgumentParser):
         parser.add_argument(
-            "--download-directory",
-            type=(lambda arg: self._validate_is_pathlike(arg)),
-            help="Path to working directory. creates if not exist.",
-        )
-
-        dimensions = parser.add_argument_group("dimensions")
-
-        dimensions.add_argument(
-            "--aspect-ratio",
+            "--presentation-id",
+            nargs="+",
             type=str,
-            default="16:9",
-            help="Destination screen's aspect ratio, e.g. 16:9, delimited by ':'",
-        )
-        dimensions.add_argument(
-            "--dpi",
-            type=int,
-            default=300,
-            help="Dots Per Inch (DPI) of output image(s) or video(s).",
-        )
-        dimensions.add_argument(
-            "--screen-width",
-            type=int,
-            default=3456,
-            help="Screen width in Pixels of output image(s) or video(s).",
-        )
-        dimensions.add_argument(
-            "--screen-height",
-            type=int,
-            default=2234,
-            help="Screen height in Pixels of output image(s) or video(s).",
-        )
-
-    def _add_image_args(self, parser: argparse.ArgumentParser):
-        images = parser.add_argument_group("images")
-
-        images.add_argument(
-            "--save-images-to-file",
-            action="store_false",
-            help="image format to use when exporting images.  svg, png, jpeg.",
+            help=(
+                "Space-separated Google slides presentation ids to convert. "
+                "e.g. --presentation-id presentation_id ... ..."
+            ),
         )
 
         parser.add_argument(
-            "--image-file-format",
+            "--folder-id",
+            nargs="+",
+            type=str,
+            help=(
+                "Space-separated Google Drive folder ids to search for slides presentations. "
+                "e.g. --folder-id folder_id ... ..."
+            ),
+        )
+
+        parser.add_argument(
+            "--custom-presentation",
+            nargs="+",
+            type=str,
+            help=(
+                "Build custom mp4s from a JSON encoded list of lists. "
+                "(a single slide is a comma separated string of a presentation_id and slide_id) "
+                "e.g. --custom-presentation "
+                " \"[['presentation_id,slide_id', '...,...', '...,...'], [...], [...]]\""
+            ),
+        )
+
+        parser.add_argument(
+            "--file-formats",
+            nargs="+",
             type=str,
             default="svg",
             choices=["svg", "png", "jpeg"],
-            help="image format to use when exporting images.  svg, png, jpeg.",
+            help="Image format to use when exporting images.  svg, png, jpeg.",
         )
 
-    def _add_mp4_args(self, parser: argparse.ArgumentParser):
-        images = parser.add_argument_group("images")
-
-        images.add_argument(
-            "--save-images-to-file",
+        parser.add_argument(
+            "--run-all",
             action="store_true",
-            help="image format to use when exporting images.  svg, png, jpeg.",
+            help=(
+                "When converting a folder of presentations, run only on first discovered "
+                "presentation.  Used for confirming workflow."
+            ),
+        )
+
+        self._add_set_label_arg(parser)
+
+        parser.add_argument(
+            "--download-directory",
+            type=(lambda arg: _check_string_is_pathlike(arg)),
+            help="Path to working directory. creates if not exist.",
         )
 
         mp4 = parser.add_argument_group("mp4")
-        parser.add_argument(
+        mp4.add_argument(
             "--mp4-slide-duration-secs",
             type=int,
             default=20,
@@ -485,106 +348,86 @@ class ArgParser(argparse.ArgumentParser):
         )
         mp4.add_argument(
             "--mp4-total-video-duration",
-            type=self._int_or_none,
+            type=_check_int_or_none,
             default=None,
             help=(
-                "Amount of time in secs each slide should play when presentation "
-                "is converted to video"
+                "Total duration of mp4 video.  Subject to system modification based on "
+                "--mp4-slide-duration-secs or if presentation has transitions or embedded video."
             ),
         )
         mp4.add_argument(
-            "--save-mp4-to-file",
-            action="store_false",
-            help="image format to use when exporting images.  svg, png, jpeg.",
-        )
-
-    def _add_folder_args(self, parser: argparse.ArgumentParser):
-        folder = parser.add_argument_group("folder")
-        parser.add_argument(
-            "--folder-id",
-            type=str,
-            required=True,
-            help="Google Drive folder id to search for slides presentations.",
-        )
-        folder.add_argument(
-            "--run-all",
-            action="store_true",
+            "--fps",
+            type=int,
+            default=10,
             help=(
-                "When converting a folder of presentations, run only on first discovered "
-                "presentation.  Used for confirming workflow."
+                "Base frames-per-second. Subject to system modification if presentation has "
+                "transitions or embedded video."
             ),
         )
 
-    def _add_presentation_args(self, parser: argparse.ArgumentParser):
-        parser.add_argument(
-            "--presentation-id",
+        image = parser.add_argument_group("image")
+
+        image.add_argument(
+            "--jpeg-quality",
+            type=int,
+            default=90,
+            help=(
+                "Quality level of exported jpeg images."
+            ),
+        )
+
+        screen = parser.add_argument_group("screen")
+
+        screen.add_argument(
+            "--aspect-ratio",
             type=str,
-            help="Google slides presentation id to convert.",
+            default="16:9",
+            help="Destination screen's aspect ratio, e.g. 16:9, delimited by ':'",
+        )
+        screen.add_argument(
+            "--dpi",
+            type=int,
+            default=300,
+            help="Dots Per Inch (DPI) of output image(s) or video(s).",
+        )
+        screen.add_argument(
+            "--screen-width",
+            type=int,
+            default=3456,
+            help="Screen width in Pixels of output image(s) or video(s).",
+        )
+        screen.add_argument(
+            "--screen-height",
+            type=int,
+            default=2234,
+            help="Screen height in Pixels of output image(s) or video(s).",
         )
 
-    def _int_or_none(self, value):
-        if value.lower() == "none":
-            return None
-        return int(value)
-
-    def _validate_is_pathlike(self, string: str) -> None:
-        try:
-            path = Path(string)  # noqa:F841
-        except (TypeError, ValueError) as err:
-            raise ValueError("directory or file path is not pathlike.") from err
-
-        return string  # type:ignore
-
-    def _fix_path_strings(self):
-        # Fix --download-directory
-        self.arg_namespace.download_directory = (
-            Path(self.arg_namespace.download_directory)
-            if self.arg_namespace.download_directory
-            else Path(Path(".").resolve())
+    def _add_set_label_arg(self, parser: argparse.ArgumentParser):
+        parser.add_argument(
+            "--set-label",
+            action="store_true",
+            help=(
+                "Save Options as a labeled option set."
+            ),
         )
 
-    @staticmethod
-    def check_allow_only_presentation_or_folder_not_both(folder_id, presentation_id):
-        if folder_id and presentation_id:
-            raise ValueError(
-                "Must Specify either 'folder_id' or 'presentation_id', but not both."
-            )
-
-    @staticmethod
-    def set_screen_dimensions(aspect_ratio: str, input_width: int, input_height: int):
-        aspect_ratio_tuple = tuple(aspect_ratio.split(":"))
-        aspect_width: int | None = (
-            int(
-                input_height * (int(aspect_ratio_tuple[0]) / int(aspect_ratio_tuple[1]))
-            )
-            if input_height
-            else None
+    def _add_options_history_args(self, parser: argparse.ArgumentParser):
+        parser.add_argument(
+            "label",
+            type=str,
+            nargs="?",
+            default=None,
+            help=(
+                "call gslide2media with used a Named Option Set."
+            ),
         )
-        aspect_height: Optional[int] | None = (
-            int(input_width * (int(aspect_ratio_tuple[1]) / int(aspect_ratio_tuple[0])))
-            if input_width
-            else None
+
+        parser.add_argument(
+            "--label",
+            type=str,
+            help=(
+                "call gslide2media with used a Named Option Set."
+            ),
+            dest="label"
         )
-        screen_width: Optional[int] = input_width or aspect_width
-        screen_height: Optional[int] = input_height or aspect_height
-
-        return screen_width, screen_height
-
-    @staticmethod
-    def check_allow_only_create_images_or_mp4_not_both(
-        create_images: bool, create_mp4s: bool
-    ) -> None:
-        if create_images and create_mp4s:
-            raise ValueError(
-                "Must Specify either 'create_images' or 'create_mp4s', but not both."
-            )
-
-    @staticmethod
-    def check_allow_only_mp4_slide_or_total_duration_not_both(
-        mp4_slide_duration_secs: int, mp4_total_duration_secs: int
-    ):
-        if mp4_slide_duration_secs and mp4_total_duration_secs:
-            raise ValueError(
-                "Must Specify either 'mp4_slide_duration_secs' or 'mp4_total_video_duration', "
-                "but not both."
-            )

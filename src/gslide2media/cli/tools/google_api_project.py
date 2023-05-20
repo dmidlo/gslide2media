@@ -815,12 +815,16 @@ class ManualSteps(OrderedDict):
         print(
             "\n\n**For security purposes, the client secret file will be deleted once it has been imported.**\n"
         )
-        return inquirer.filepath(
-            message="Enter path to your google client secret json file to import:",
-            default=str(Path().resolve()),
-            validate=PathValidator(is_file=True, message="Input is not a file"),
-            only_files=True,
-        ).execute()
+
+        try:
+            return inquirer.filepath(
+                message="Enter path to your google client secret json file to import:",
+                default=str(Path().resolve()),
+                validate=PathValidator(is_file=True, message="Input is not a file"),
+                only_files=True,
+            ).execute()
+        except KeyboardInterrupt as err:
+            raise SystemExit("gslide2media: user exited.") from err
 
 
 class GoogleApiProject:

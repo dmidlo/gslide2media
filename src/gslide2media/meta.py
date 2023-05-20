@@ -17,6 +17,8 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from gslide2media.options import Options
+from gslide2media.cli.modifiers import _fix_path_strings
+from gslide2media.enums import OptionsTimeAttrs
 
 
 @dataclass
@@ -26,8 +28,8 @@ class Metadata:
     app_metadata_path = Path.home() / ".gslide2media_meta"
     google_client_secret: dict = field(default_factory=dict)
     google_client_token: Credentials | None = None
-    # TODO: Implement Options History with InquirerPy
-    options_history: list[Options] = field(default_factory=list[Options])
+    options_history: set[Options] = field(default_factory=set[Options])
+    options_history_max_unnamed_sets = 10
 
     def __call__(self, **kwargs):
         for key, value in kwargs.items():
@@ -149,3 +151,32 @@ class Metadata:
             data = json.load(file)
 
         self(google_client_secret=data)
+
+    def add_option_set(self, options_set: Options, options_set_name: str=None):
+        if not options_set == _fix_path_strings(Options()):
+            options_set.mark_time(OptionsTimeAttrs.LAST_USED)
+
+            if options_set in self.options_history:
+                self.options_history.remove(options_set)
+            self.options_history.add(options_set)
+
+        self.enforce_unnamed_option_sets_limit()
+
+    def collate_named_and_unnamed_option_sets(self) -> tuple:
+        named_sets: list = []
+        unnamed_sets: list = []
+
+        for _ in self.options_history:
+            if _._options_set_name:
+                named_sets.append(_)
+            else:
+                unnamed_sets.append(_)
+
+        return named_sets, unnamed_sets
+    
+    def enforce_unnamed_option_sets_limit(self) -> None:
+        named_sets, unnamed_sets = self.collate_named_and_unnamed_option_sets()
+
+        unnamed_sets = sorted(unnamed_sets, key=lambda options_set: options_set._last_used_time_utc, reverse=True)[:self.options_history_max_unnamed_sets]
+
+        self.options_history = set(named_sets) | set(unnamed_sets)
