@@ -208,6 +208,19 @@ class Metadata:
 
         self.options_history = set(named_sets) | set(unnamed_sets)
 
+    def get_options_set_by_label(self, label: str):
+        option_set: Options | None = None
+
+        for _ in self.options_history:
+            if hash(label) == _.__hash__():
+                option_set = _
+        
+        if not option_set:
+            raise ValueError(f"No Option set with label found: {label}")
+        
+        option_set.mark_time(OptionsTimeAttrs.LAST_USED)
+        return option_set
+
     def remove_options_set(self, options_set: Options) -> None:
 
         if options_set._remove_history_option:

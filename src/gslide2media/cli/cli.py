@@ -46,13 +46,15 @@ class ArgParser(argparse.ArgumentParser):
         self.arg_namespace = _check_for_tools_and_run(self.arg_namespace)
         self._sanitize_input()
 
-        self.arg_namespace.presentation_id = ["1"]
+        self.arg_namespace.options_set_name = "c"
 
-        # update_options_history()  this will be in modifiers.
+        # update_options_history()  this will be in meta.
         if self.arg_namespace._remove_history_option:
             config.META.remove_options_set(self.arg_namespace)
-        if self.arg_namespace._clear_history:
+        elif self.arg_namespace._clear_history:
             config.META.clear_options_history(self.arg_namespace)
+        elif self.arg_namespace.label:
+            self.arg_namespace = config.META.get_options_set_by_label(self.arg_namespace.label)
         config.META.add_option_set(self.arg_namespace)
 
         return self.arg_namespace
@@ -77,7 +79,15 @@ class ArgParser(argparse.ArgumentParser):
         self.history_parser = self.subparsers.add_parser(
             "history",
             help="start gslide2media with a previously used options set",
-            usage="gslide2media history",
+            usage=(
+                "\n  gslide2media history"
+                "\n  gslide2media history --label <NamedOptionSet>"
+                "\n  gslide2media history set-label"
+                "\n  gslide2media history remove"
+                "\n  gslide2media history remove --label <NamedOptionSet>"
+                "\n  gslide2media history clear"
+                "\n  gslide2media history clear --force"
+            ),
             formatter_class=lambda prog: argparse.HelpFormatter(
                 prog=prog,
                 width=self.formatter_width,

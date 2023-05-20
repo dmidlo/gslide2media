@@ -23,6 +23,8 @@ class ToMedia:
 
         config.ARGS = ArgParser(options)()
 
+        print(config.ARGS)
+
         config.GOOGLE = GoogleClient()
         
 
