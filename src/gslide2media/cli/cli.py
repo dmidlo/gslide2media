@@ -13,7 +13,7 @@ from .modifiers import _check_for_tools_and_run
 from .modifiers import _fix_path_strings
 from .modifiers import _set_screen_dimensions
 
-default_options = Options(_options_source=OptionsSource.DEFAULT)
+default_options = Options(options_source=OptionsSource.DEFAULT)
 
 
 class ArgParser(argparse.ArgumentParser):
@@ -22,7 +22,12 @@ class ArgParser(argparse.ArgumentParser):
         self.max_help_position = 140
         super().__init__(
             prog=prog,
-            usage="\n  gslide2media [options]\n  gslide2media interactive [options]\n  gslide2media history [args|command]\n  gslide2media auth [command]",
+            usage=(
+                "\n  gslide2media [options]"
+                "\n  gslide2media interactive [options]"
+                "\n  gslide2media history [args|command]"
+                "\n  gslide2media auth [command]"
+            ),
             formatter_class=lambda prog: argparse.HelpFormatter(
                 prog=prog,
                 width=self.formatter_width,
@@ -45,17 +50,8 @@ class ArgParser(argparse.ArgumentParser):
         _check_should_print_help(self)
         self.arg_namespace = _check_for_tools_and_run(self.arg_namespace)
         self._sanitize_input()
-
-        self.arg_namespace.options_set_name = "c"
-
-        # update_options_history()  this will be in meta.
-        if self.arg_namespace._remove_history_option:
-            config.META.remove_options_set(self.arg_namespace)
-        elif self.arg_namespace._clear_history:
-            config.META.clear_options_history(self.arg_namespace)
-        elif self.arg_namespace.label:
-            self.arg_namespace = config.META.get_options_set_by_label(self.arg_namespace.label)
-        config.META.add_option_set(self.arg_namespace)
+        self.arg_namespace.options_set_name = "a"
+        self.arg_namespace = config.META.parse_options_history_args(self.arg_namespace)
 
         return self.arg_namespace
 
@@ -95,12 +91,15 @@ class ArgParser(argparse.ArgumentParser):
             ),
         )
 
-        self.history_subparsers = self.history_parser.add_subparsers(title="commands", parser_class=argparse.ArgumentParser, metavar="")
+        self.history_subparsers = self.history_parser.add_subparsers(
+            title="commands", parser_class=argparse.ArgumentParser, metavar=""
+        )
 
         self.history_set_label = self.history_subparsers.add_parser(
             "set-label",
             help=(
-                "Add a label to to an options set to create a named option set using an interactive prompt."
+                "Add a label to to an options set to create a named option set "
+                "using an interactive prompt."
             ),
             usage="\n  gslide2media history set-label",
             formatter_class=lambda prog: argparse.HelpFormatter(
@@ -108,39 +107,36 @@ class ArgParser(argparse.ArgumentParser):
                 width=self.formatter_width,
                 max_help_position=self.max_help_position,
             ),
-
         )
         self.history_set_label.set_defaults(set_label=True)
 
         self.history_remove = self.history_subparsers.add_parser(
             "remove",
-            help=(
-                "Remove an Options Set from history."
+            help=("Remove an Options Set from history."),
+            usage=(
+                "\n  gslide2media history remove"
+                "\n  gslide2media history remove --label <NamedOptionSet>"
+                "\n accepts --force to skip confirm."
             ),
-            usage="\n  gslide2media history remove\n  gslide2media history remove --label <NamedOptionSet>\n accepts --force to skip confirm.",
             formatter_class=lambda prog: argparse.HelpFormatter(
                 prog=prog,
                 width=self.formatter_width,
                 max_help_position=self.max_help_position,
             ),
-
         )
-        self.history_remove.set_defaults(_remove_history_option=True)
+        self.history_remove.set_defaults(remove_history_option=True)
 
         self.history_clear = self.history_subparsers.add_parser(
             "clear",
-            help=(
-                "Clears Options history."
-            ),
+            help=("Clears Options history."),
             usage="\n  gslide2media history clear\n  gslide2media history clear --force",
             formatter_class=lambda prog: argparse.HelpFormatter(
                 prog=prog,
                 width=self.formatter_width,
                 max_help_position=self.max_help_position,
             ),
-
         )
-        self.history_clear.set_defaults(_clear_history=True)
+        self.history_clear.set_defaults(clear_history=True)
 
         self.auth_parser = self.subparsers.add_parser(
             "auth",
@@ -159,7 +155,8 @@ class ArgParser(argparse.ArgumentParser):
         self.tool_auth_google_api_project_parser = self.auth_subparsers.add_parser(
             "wizard",
             help=(
-                "A CLI-based walk-through for the process of creating a Google Developer project, generating a client_secret*.json, and importing it to gslide2media."
+                "A CLI-based walk-through for the process of creating a Google Developer project, "
+                "generating a client_secret*.json, and importing it to gslide2media."
             ),
             usage="gslide2media auth wizard",
             formatter_class=lambda prog: argparse.HelpFormatter(
@@ -174,9 +171,7 @@ class ArgParser(argparse.ArgumentParser):
 
         self.tool_import_client_secret_parser = self.auth_subparsers.add_parser(
             "import",
-            help=(
-                "Import a Google Developer project's client_secret*.json."
-            ),
+            help=("Import a Google Developer project's client_secret*.json."),
             usage="gslide2media auth import",
             formatter_class=lambda prog: argparse.HelpFormatter(
                 prog=prog,
@@ -268,7 +263,6 @@ class ArgParser(argparse.ArgumentParser):
         return args
 
     def _sanitize_input(self):
-
         # Pre-parse
         _check_allow_only_mp4_slide_or_total_duration_not_both(
             self.arg_namespace.mp4_slide_duration_secs,
@@ -276,7 +270,7 @@ class ArgParser(argparse.ArgumentParser):
         )
 
         # Parse
-        if "gslide2media" not in sys.argv[0] and self.arg_namespace._from_api:
+        if "gslide2media" not in sys.argv[0] and self.arg_namespace.from_api:
             args = self._prepare_from_api_args()
             self.parse_args(args, namespace=self.arg_namespace)
         else:
@@ -350,7 +344,9 @@ class ArgParser(argparse.ArgumentParser):
 
         parser.add_argument(
             "--download-directory",
-            type=(lambda arg: _check_string_is_pathlike(arg)),
+            type=(
+                lambda arg: _check_string_is_pathlike(arg)
+            ),  # pylint: disable=unnecessary-lambda
             help="Path to working directory. creates if not exist.",
         )
 
@@ -389,9 +385,7 @@ class ArgParser(argparse.ArgumentParser):
             "--jpeg-quality",
             type=int,
             default=90,
-            help=(
-                "Quality level of exported jpeg images."
-            ),
+            help=("Quality level of exported jpeg images."),
         )
 
         screen = parser.add_argument_group("screen")
@@ -424,28 +418,28 @@ class ArgParser(argparse.ArgumentParser):
     def _add_set_label_arg(self, parser: argparse.ArgumentParser):
         parser.add_argument(
             "--set-label",
-            action="store_true",
-            help=(
-                "Save Options as a labeled option set."
-            ),
+            type=str,
+            help=("Save Options as a labeled option set."),
         )
 
     def _add_options_history_args(self, parser: argparse.ArgumentParser):
         parser.add_argument(
             "--label",
             type=str,
-            help=(
-                "call gslide2media with a Named Option Set."
-            ),
+            help=("call gslide2media with a Named Option Set."),
+        )
+
+        parser.add_argument(
+            "--max-unnamed",
+            type=int,
+            help=("Set the max amount of unnamed options set to retain in history."),
+            dest="options_max_history",
         )
 
     def _add_clear_force_arg(self, parser: argparse.ArgumentParser):
         parser.add_argument(
             "--force",
             action="store_true",
-            help=(
-                "call gslide2media with a Named Option Set."
-            ),
-            dest="clear_force"
+            help=("call gslide2media with a Named Option Set."),
+            dest="clear_force",
         )
-

@@ -1,9 +1,6 @@
-
 from InquirerPy import inquirer
 from InquirerPy.base.control import Choice
 from InquirerPy.exceptions import InvalidArgument
-
-from rich import print
 
 from gslide2media.options import Options
 from gslide2media import config
@@ -18,11 +15,13 @@ class OptionsHistory:
 
     def __call__(self) -> Options:
         try:
-            return Options(**inquirer.fuzzy(
-                message="Previous Option Sets. Choose One.",
-                choices=self.choices,
-                match_exact=True,
-            ).execute())
+            return Options(
+                **inquirer.fuzzy(
+                    message="Previous Option Sets. Choose One.",
+                    choices=self.choices,
+                    match_exact=True,
+                ).execute()
+            )
         except InvalidArgument as err:
             raise SystemExit("gslide2media: no history available.") from err
         except KeyboardInterrupt as err:
@@ -31,15 +30,20 @@ class OptionsHistory:
     def sort_named_sets_to_top(self) -> None:
         named_sets, unnamed_sets = config.META.collate_named_and_unnamed_option_sets()
         self.choices = [*named_sets, *unnamed_sets]
-    
+
     def sort_most_recently_used_to_top(self) -> None:
-        self.choices = sorted(self.choices, key=lambda options_set: options_set._last_used_time_utc, reverse=True)
+        self.choices = sorted(
+            self.choices,
+            key=lambda options_set: options_set.last_used_time_utc,
+            reverse=True,
+        )
 
     def pack_options_as_inquirer_choices(self) -> None:
-        self.choices = [Choice(value=_, name=self.get_options_view(_)) for _ in self.choices]
+        self.choices = [
+            Choice(value=_, name=self.get_options_view(_)) for _ in self.choices
+        ]
 
     def get_options_view(self, options_set: Options) -> str:
-
         return (
             f"Label: {options_set.options_set_name}\n"
             f"    Sources:  presentation_id(s): {options_set.presentation_id}\n"
@@ -60,15 +64,20 @@ class OptionsHistory:
         )
 
 
-def options_name_dialog(options_set: Options) -> str:
-    return inquirer.text(
-        message="Enter a label name:",
-        #TODO:  completer={}
-    ).execute().strip().replace(" ", "-")
+def options_name_dialog() -> str:
+    return (
+        inquirer.text(
+            message="Enter a label name:",
+            # TODO:  completer={}
+        )
+        .execute()
+        .strip()
+        .replace(" ", "-")
+    )
 
 
 def options_clear_confirm():
     return inquirer.confirm(
-            message="Reset options history?",
-            default=True,
-        ).execute()
+        message="Reset options history?",
+        default=True,
+    ).execute()

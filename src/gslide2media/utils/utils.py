@@ -1,3 +1,4 @@
+# pylint: disable=protected-access
 """Write a set of bytes to a file path.
 
 Functions:
@@ -52,7 +53,7 @@ def dataclass_unique_instance_cache(
     /,
     *,
     init=True,
-    repr=True,
+    repr=True,  # pylint: disable=redefined-builtin
     eq=True,
     order=False,
     unsafe_hash=False,
@@ -62,7 +63,7 @@ def dataclass_unique_instance_cache(
     slots=True,
     weakref_slot=False,
     id_keys: List[str] | None = None,
-):
+):  # sourcery skip: assign-if-exp, reintroduce-else
     def wrap(cls):
         cls = _process_class(
             cls,
@@ -89,7 +90,8 @@ def dataclass_unique_instance_cache(
 
         if not id_keys_is_list_of_strings:
             raise ValueError(
-                "dataclass_unique_instance_cache: requires [list] of 'params' to use as identifiers."
+                "dataclass_unique_instance_cache: requires [list] of 'params' "
+                "to use as identifiers."
             )
 
         if not id_keys_are_valid:
@@ -99,17 +101,21 @@ def dataclass_unique_instance_cache(
 
         cls._instances = {}
 
-        def new(cls, *args, **kwargs):
+        def new(cls, *args, **kwargs):  # pylint: disable=unused-argument
             # to make this decorator more generic.
             instance_id = tuple(kwargs[_] for _ in id_keys)
 
             if instance_id not in cls._instances:
-                cls._instances[instance_id] = super(cls, cls).__new__(  # pylint: disable=no-value-for-parameter
+                cls._instances[
+                    instance_id
+                ] = super(  # pylint: disable=no-value-for-parameter
+                    cls, cls
+                ).__new__(  # pylint: disable=no-value-for-parameter
                     cls
                 )
 
             return cls._instances[instance_id]
-        
+
         def to_dict(cls):
             return asdict(cls)
 

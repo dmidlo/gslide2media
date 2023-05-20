@@ -100,7 +100,7 @@ class ManualSteps(OrderedDict):
 
         self.update(
             {
-                (" Set Project Name.  " "(press [enter] to continue.)"): {
+                (" Set Project Name.  (press [enter] to continue.)"): {
                     "complete": False,
                     "func": self.get_project_name,
                     "func_args": {
@@ -123,9 +123,7 @@ class ManualSteps(OrderedDict):
         )
         self.update(
             {
-                (
-                    " Enable API services for project.  " "(press [enter] to continue.)"
-                ): {
+                (" Enable API services for project.  (press [enter] to continue.)"): {
                     "complete": False,
                     "func": self.enable_api_services,
                     "func_args": {"services": {"drive", "slides"}},
@@ -170,7 +168,7 @@ class ManualSteps(OrderedDict):
         )
         self.update(
             {
-                (" Import client secret Json file  " "(press [enter] to continue.)"): {
+                (" Import client secret Json file  (press [enter] to continue.)"): {
                     "complete": False,
                     "func": self.import_google_client_secret_json_dialog,
                     "func_args": {},
@@ -479,6 +477,7 @@ class ManualSteps(OrderedDict):
         self.open_new_project_wizard_in_browser(url)
 
     def open_new_project_wizard_in_browser(self, url: str) -> None:
+        # sourcery skip: class-extract-method
         """Opens the Cloud Console's new project wizard page in the user's default browser.
 
         Args:
@@ -794,7 +793,7 @@ class ManualSteps(OrderedDict):
         """
         self[key]["complete"] = True
 
-    def all_complete(self) -> bool:
+    def all_complete(self) -> bool:  # sourcery skip: boolean-if-exp-identity
         """Check whether all steps have been completed.
 
         Returns:
@@ -894,7 +893,7 @@ class GoogleApiProject:
                     break
 
                 if step_to_complete == (
-                    " Import client secret Json file  " "(press [enter] to continue.)"
+                    " Import client secret Json file  (press [enter] to continue.)"
                 ):
                     client_secret_path = self.manual_steps[step_to_complete]["func"](
                         **self.manual_steps[step_to_complete]["func_args"]

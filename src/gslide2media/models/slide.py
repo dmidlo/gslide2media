@@ -1,3 +1,4 @@
+# pylint: disable=attribute-defined-outside-init
 from typing import Iterator
 import functools
 from dataclasses import dataclass
@@ -53,9 +54,9 @@ class SlideExportUrls:
                 _,
                 self.create_slide_export_url(self.presentation_id, self.slide_id, _),
             )
-            self.__annotations__[
+            self.__annotations__[  # pylint: disable=no-member
                 _.lower()
-            ] = UrlParseResult  # pylint: disable=no-member
+            ] = UrlParseResult
 
     def __iter__(self):
         self.index = 0
@@ -208,7 +209,7 @@ class SlideData:
             self.is_composite,
             self.is_batch,
         )
-        self.json_data = FetchSlideData(
+        self.json_data = FetchSlideData(  # type:ignore
             self.slide_id,
             self.presentation_id,
             self.slide_image_urls,
@@ -296,20 +297,22 @@ class Slide:
                 svg_image = convert_partial_to_bytes(self.slide_data.image_data, key)
 
                 if key == ImageExportFormats.SVG:
-                    file = svg_image.to_file()
+                    file_obj = svg_image.to_file()
                 elif key == ImageExportFormats.PNG:
                     self.slide_data.image_data.png = svg_image.to_png()
-                    file = self.slide_data.image_data.png.to_file()
+                    file_obj = self.slide_data.image_data.png.to_file()
                 elif key == ImageExportFormats.JPEG:
                     self.slide_data.image_data.jpeg = svg_image.to_jpeg()
-                    file = self.slide_data.image_data.jpeg.to_file()
+                    file_obj = self.slide_data.image_data.jpeg.to_file()
 
             case key if key in {"json"}:
-                file = convert_partial_to_bytes(self.slide_data.json_data, key)
+                file_obj = convert_partial_to_bytes(self.slide_data.json_data, key)
             case _:
-                raise ValueError(f"{_} is an invalid file type.")
+                raise ValueError(
+                    f"{_} is an invalid file type."  # noqa pylint: disable=undefined-variable
+                )
 
-        return file
+        return file_obj
 
     def save(self, key):
         self.to_file(key).save()
@@ -333,4 +336,6 @@ class Slide:
                     self.slide_data.json_data, key
                 ).file_data
             case _:
-                raise ValueError(f"{_} is an invalid file type.")
+                raise ValueError(
+                    f"{_} is an invalid file type."  # noqa pylint: disable=undefined-variable
+                )

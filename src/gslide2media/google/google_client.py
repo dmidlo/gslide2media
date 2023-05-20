@@ -1,9 +1,9 @@
-from typing import Optional
 from typing import Tuple
 from typing import NamedTuple
 
-from googleapiclient.errors import HttpError
 from pathlib import Path
+
+from googleapiclient.errors import HttpError
 
 from gslide2media import config
 

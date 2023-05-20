@@ -106,13 +106,6 @@ class File:
             "_resolved_drive_path": {self._resolved_drive_path}
         """
 
-    parent: str | None = None
-    is_batch: bool = False
-
-    _path: Path | None = None
-    _working_dir: Path | None = None
-    _resolved_drive_path: Path | str | None = None
-
     @property
     def path(self):
         return self._path
@@ -139,7 +132,7 @@ class File:
 
     @property
     def resolved_drive_path(self) -> Path | str:
-        return self._resolved_drive_path
+        return self._resolved_drive_path  # type:ignore
 
     @resolved_drive_path.setter
     def resolved_drive_path(self, resolved_drive_path: Path | str):

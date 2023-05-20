@@ -2,11 +2,13 @@ from pathlib import Path
 import sys
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from .cli import ArgParser
 
+
 def _check_should_print_help(obj: "ArgParser"):
-    if not obj.arg_namespace._from_api:
+    if not obj.arg_namespace.from_api:
         if len(sys.argv) == 1:
             obj.print_help(sys.stdout)
             raise SystemExit(0)
@@ -16,13 +18,14 @@ def _check_should_print_help(obj: "ArgParser"):
                 obj.auth_parser.print_help()
                 raise SystemExit
 
-            if sys.argv[2] == '-h' or sys.argv[2] == "--help":
+            if sys.argv[2] == "-h" or sys.argv[2] == "--help":
                 obj.auth_parser.print_help()
                 raise SystemExit
 
 
 def _check_for_at_least_one_source():
     ...
+
 
 def _check_int_or_none(value) -> int | None:
     return None if value.lower() == "none" else int(value)

@@ -23,8 +23,6 @@ from gslide2media.cli.tools import options_clear_confirm
 from gslide2media.cli.modifiers import _fix_path_strings
 from gslide2media.enums import OptionsTimeAttrs
 
-from rich import print
-
 
 @dataclass
 class Metadata:
@@ -34,7 +32,7 @@ class Metadata:
     google_client_secret: dict = field(default_factory=dict)
     google_client_token: Credentials | None = None
     options_history: set[Options] = field(default_factory=set[Options])
-    options_history_max_unnamed_sets = 10
+    options_history_max_unnamed_sets: int | None = None
 
     def __call__(self, **kwargs):
         for key, value in kwargs.items():
@@ -47,6 +45,10 @@ class Metadata:
 
         cls.generate_settings(cls.app_settings_path)
         return super().__new__(cls)
+
+    def __post_init__(self):
+        if not self.options_history_max_unnamed_sets:
+            self.options_history_max_unnamed_sets = 10
 
     @classmethod
     def metadata_singleton_factory(cls):
@@ -160,7 +162,9 @@ class Metadata:
     def add_option_set(self, options_set: Options):
         terminate = isinstance(options_set.set_label, bool)
 
-        if options_set != _fix_path_strings(Options()) or isinstance(options_set.set_label, bool):
+        if options_set != _fix_path_strings(Options()) or isinstance(
+            options_set.set_label, bool
+        ):
             options_set = self.set_options_name(options_set)
             options_set.mark_time(OptionsTimeAttrs.LAST_USED)
 
@@ -179,11 +183,13 @@ class Metadata:
             if isinstance(options_set.set_label, bool):
                 options_set = OptionsHistory()()
                 self.options_history.remove(options_set)
-                options_set.options_set_name = options_name_dialog(options_set)
+                options_set.options_set_name = options_name_dialog()
 
             if isinstance(options_set.set_label, str):
                 self.options_history.remove(options_set)
-                options_set.options_set_name = options_set.set_label.strip().replace(" ", "-")
+                options_set.options_set_name = options_set.set_label.strip().replace(
+                    " ", "-"
+                )
 
             options_set.set_label = None
             options_set.mark_time(OptionsTimeAttrs.MODIFY)
@@ -204,7 +210,11 @@ class Metadata:
     def enforce_unnamed_option_sets_limit(self) -> None:
         named_sets, unnamed_sets = self.collate_named_and_unnamed_option_sets()
 
-        unnamed_sets = sorted(unnamed_sets, key=lambda options_set: options_set._last_used_time_utc, reverse=True)[:self.options_history_max_unnamed_sets]
+        unnamed_sets = sorted(
+            unnamed_sets,
+            key=lambda options_set: options_set.last_used_time_utc,
+            reverse=True,
+        )[: self.options_history_max_unnamed_sets]
 
         self.options_history = set(named_sets) | set(unnamed_sets)
 
@@ -212,27 +222,31 @@ class Metadata:
         option_set: Options | None = None
 
         for _ in self.options_history:
-            if hash(label) == _.__hash__():
+            if hash(label) == _.__hash__():  # pylint: disable=unnecessary-dunder-call
                 option_set = _
-        
+
         if not option_set:
             raise ValueError(f"No Option set with label found: {label}")
-        
+
         option_set.mark_time(OptionsTimeAttrs.LAST_USED)
         return option_set
 
     def remove_options_set(self, options_set: Options) -> None:
-
-        if options_set._remove_history_option:
+        if options_set.remove_history_option:
             trash_option_set: Options | None = None
 
             if options_set.label:
                 for _ in self.options_history:
-                    if hash(options_set.label) == _.__hash__():
+                    if (
+                        hash(options_set.label)
+                        == _.__hash__()  # pylint: disable=unnecessary-dunder-call
+                    ):
                         trash_option_set = _
-                
+
                 if not trash_option_set:
-                    raise ValueError(f"No Option set with label found: {options_set.label}")
+                    raise ValueError(
+                        f"No Option set with label found: {options_set.label}"
+                    )
 
             else:
                 trash_option_set = OptionsHistory()()
@@ -241,7 +255,7 @@ class Metadata:
                 self.options_history.remove(trash_option_set)
         self.write()
         raise SystemExit("options set removed.")
-    
+
     def clear_options_history(self, options_set: Options) -> None:
         if len(self.options_history) > 0:
             if options_set.clear_force:
@@ -254,5 +268,26 @@ class Metadata:
             self.write()
         else:
             raise SystemExit("No records in options history.")
-     
+
         raise SystemExit("reset options history.")
+
+    def set_max_unnamed_options_history(self, max_unnamed_history: int) -> None:
+        self.options_history_max_unnamed_sets = max_unnamed_history
+        self.write()
+        raise SystemExit(
+            f"Unnamed Option sets history max is: {self.options_history_max_unnamed_sets}"
+        )
+
+    def parse_options_history_args(self, arg_namespace: Options) -> Options:
+        if arg_namespace.options_max_history:
+            self.set_max_unnamed_options_history(arg_namespace.options_max_history)
+        elif arg_namespace.remove_history_option:
+            self.remove_options_set(arg_namespace)
+        elif arg_namespace.clear_history:
+            self.clear_options_history(arg_namespace)
+        elif arg_namespace.label:
+            arg_namespace = self.get_options_set_by_label(arg_namespace.label)
+
+        self.add_option_set(arg_namespace)
+
+        return arg_namespace

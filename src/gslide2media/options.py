@@ -30,29 +30,31 @@ class Options:
     save_to_file: bool = False
     import_client_secret: bool = False
 
+    # Options History Args
+    # excludes named option sets and generic commands that manipulate the options object.
     label: str | None = None
     set_label: bool | str | None = None
     options_set_name: str | None = None
-    _options_max_history: int | None = None  # excludes named option sets and generic commands that manuipulate the options object.
-    _remove_history_option: bool = False
-    _clear_history: bool = False
+    options_max_history: int | None = None
+    remove_history_option: bool = False
+    clear_history: bool = False
     clear_force: bool = False
 
     _interactive: bool = False
-    _from_api: bool = False
+    from_api: bool = False
     _tool_auth_google_api_project: bool = False
     _tool_import_client_secret: bool = False
-    _options_source: OptionsSource | None = None
+    options_source: OptionsSource | None = None
     _create_time_utc: int | None = None
     _modify_time_utc: int | None = None
-    _last_used_time_utc: int | None = None
+    last_used_time_utc: int | None = None
 
     def __post_init__(self) -> None:
         if not self._create_time_utc:
             self.mark_time(OptionsTimeAttrs.CREATE)
         if not self._modify_time_utc:
             self.mark_time(OptionsTimeAttrs.MODIFY)
-        if not self._last_used_time_utc:
+        if not self.last_used_time_utc:
             self.mark_time(OptionsTimeAttrs.LAST_USED)
 
         if not self.download_directory:
@@ -60,23 +62,23 @@ class Options:
 
         # Class Attrs to ignore for __eq__ and __hash__
         self._comp_excluded_attrs = [
-                                "comp_excluded_attrs",
-                                "import_client_secret",
-                                "label",
-                                "set_label",
-                                "_options_max_history",
-                                "_remove_history_option",
-                                "_clear_history",
-                                "clear_force"
-                                "_interactive",
-                                "_from_api",
-                                "_tool_auth_google_api_project",
-                                "_tool_import_client_secret",
-                                "_options_source",
-                                "_create_time_utc",
-                                "_modify_time_utc",
-                                "_last_used_time_utc",
-                            ]
+            "comp_excluded_attrs",
+            "import_client_secret",
+            "label",
+            "set_label",
+            "options_max_history",
+            "remove_history_option",
+            "clear_history",
+            "clear_force",
+            "_interactive",
+            "from_api",
+            "_tool_auth_google_api_project",
+            "_tool_import_client_secret",
+            "options_source",
+            "_create_time_utc",
+            "_modify_time_utc",
+            "last_used_time_utc",
+        ]
 
     def __call__(self, **kwargs) -> None:
         for key, value in kwargs.items():
@@ -84,7 +86,7 @@ class Options:
 
     def __hash__(self) -> int:
         # if it's a named option set, __eq__ and __hash__ are calculated on just the name,
-        # whereas unnnamed option sets are calculated on the hash 
+        # whereas unnamed option sets are calculated on the hash
         # of self minus self._comp_excluded_attrs.
 
         if self.options_set_name:
@@ -105,7 +107,7 @@ class Options:
 
         if not isinstance(other, self.__class__):
             return False
-        
+
         if self.options_set_name and self.options_set_name == other.options_set_name:
             return True
 
@@ -123,6 +125,6 @@ class Options:
             case OptionsTimeAttrs.MODIFY:
                 self._modify_time_utc = utc_timestamp
             case OptionsTimeAttrs.LAST_USED:
-                self._last_used_time_utc = utc_timestamp
+                self.last_used_time_utc = utc_timestamp
             case _:
                 raise AttributeError(f"invalid time action: {action}.")

@@ -11,4 +11,3 @@ class OptionsTimeAttrs(StrEnum):
     CREATE = auto()
     MODIFY = auto()
     LAST_USED = auto()
-

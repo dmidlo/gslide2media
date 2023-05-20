@@ -1,3 +1,4 @@
+# pylint: disable=attribute-defined-outside-init
 from dataclasses import dataclass
 from urllib.parse import urlparse
 from urllib.parse import urlunparse
@@ -50,9 +51,9 @@ class PresentationExportUrls:
                 _,
                 self.create_presentation_export_url(self.presentation_id, _),
             )
-            self.__annotations__[
+            self.__annotations__[  # pylint: disable=no-member
                 _.lower()
-            ] = UrlParseResult  # pylint: disable=no-member
+            ] = UrlParseResult
 
     def __iter__(self):
         self.index = 0
@@ -89,7 +90,7 @@ class PresentationExportUrls:
         )
 
         return File(
-            extension=key,
+            extension=key,  # type:ignore
             file_data=bytes_content,
             presentation_id=self.presentation_id,
             parent=self.parent,
@@ -156,7 +157,9 @@ class FetchPresentationData:
 
         return DataPartial(func)(obj=self)
 
-    def get_mp4_bytes(self, slides: list | None | None = None):
+    def get_mp4_bytes(
+        self, slides: list | None | None = None
+    ):  # pylint: disable=unused-argument
         def func(obj, slides: list | None = None):
             output_params = {
                 "fps": config.ARGS.fps,
@@ -167,7 +170,7 @@ class FetchPresentationData:
             }
 
             frame_count = int(
-                config.ARGS.mp4_slide_duration_secs * config.ARGS.fps
+                config.ARGS.mp4_slide_duration_secs * config.ARGS.fps  # type:ignore
             )  # type:ignore
             video_frames = []
 
@@ -195,9 +198,9 @@ class FetchPresentationData:
                 GooglePresentationExportFormats.JSON
             }:
                 setattr(self, _, self.presentation_urls[_])
-                self.__annotations__[_.lower()] = type(
+                self.__annotations__[_.lower()] = type(  # pylint: disable=no-member
                     functools.partial
-                )  # pylint: disable=no-member
+                )
         elif export_type is GooglePresentationExportTypes.DATA:
             setattr(self, "json", self.get_json_presentation_data())
             self.__annotations__["json"] = dict  # pylint: disable=no-member
@@ -310,7 +313,7 @@ class Presentation:
     _presentation_data: PresentationData | None = None
     _instances = {}  # type:ignore
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args, **kwargs):  # pylint: disable=unused-argument
         instance_id = tuple(
             kwargs[_] if hasattr(kwargs, _) else "batch"
             for _ in ["presentation_id", "parent"]
@@ -383,7 +386,7 @@ class Presentation:
                         self.presentation_data.file_data, key  # type:ignore
                     )
                 case key if key == ExportFormats.JSON:
-                    slides_json = (_.to_file(key) for _ in self.slides)
+                    slides_json = (_.to_file(key) for _ in self.slides)  # type:ignore
 
                     if not self.slide_ids:
                         presentation_json = iter(

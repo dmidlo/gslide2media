@@ -9,6 +9,7 @@ from gslide2media import config
 
 from .file import File
 
+
 @dataclass_unique_instance_cache(id_keys=["img_format", "presentation_id", "slide_id"])
 class Image:
     img_format: ImageExportFormats
