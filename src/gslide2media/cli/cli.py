@@ -45,6 +45,12 @@ class ArgParser(argparse.ArgumentParser):
         _check_should_print_help(self)
         self.arg_namespace = _check_for_tools_and_run(self.arg_namespace)
         self._sanitize_input()
+
+        self.arg_namespace.presentation_id = ["1"]
+
+        # update_options_history()  this will be in modifiers.
+        if self.arg_namespace._remove_history_option:
+            config.META.remove_options_set(self.arg_namespace)
         config.META.add_option_set(self.arg_namespace)
 
         return self.arg_namespace
@@ -99,7 +105,7 @@ class ArgParser(argparse.ArgumentParser):
             help=(
                 "Remove an Options Set from history."
             ),
-            usage="\n  gslide2media history remove\n  gslide2media history remove <NamedOptionSet>\n accepts --force to skip confirm.",
+            usage="\n  gslide2media history remove\n  gslide2media history remove --label <NamedOptionSet>\n accepts --force to skip confirm.",
             formatter_class=lambda prog: argparse.HelpFormatter(
                 prog=prog,
                 width=self.formatter_width,
@@ -173,6 +179,7 @@ class ArgParser(argparse.ArgumentParser):
     def _set_args(self):
         self._add_standard_args(self)
         self._add_options_history_args(self.history_parser)
+        self._add_options_history_args(self.history_remove)
 
     def _prepare_from_api_args(self):
         """Build the args list from api Options.
@@ -412,20 +419,18 @@ class ArgParser(argparse.ArgumentParser):
 
     def _add_options_history_args(self, parser: argparse.ArgumentParser):
         parser.add_argument(
-            "label",
+            "--label",
             type=str,
-            nargs="?",
-            default=None,
             help=(
-                "call gslide2media with used a Named Option Set."
+                "call gslide2media with a Named Option Set."
             ),
         )
 
         parser.add_argument(
-            "--label",
-            type=str,
+            "--force",
+            action="store_true",
             help=(
-                "call gslide2media with used a Named Option Set."
+                "call gslide2media with a Named Option Set."
             ),
-            dest="label"
         )
+

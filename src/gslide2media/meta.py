@@ -22,6 +22,8 @@ from gslide2media.cli.tools import options_name_dialog
 from gslide2media.cli.modifiers import _fix_path_strings
 from gslide2media.enums import OptionsTimeAttrs
 
+from rich import print
+
 
 @dataclass
 class Metadata:
@@ -155,6 +157,7 @@ class Metadata:
         self(google_client_secret=data)
 
     def add_option_set(self, options_set: Options):
+        terminate = isinstance(options_set.set_label, bool)
 
         if options_set != _fix_path_strings(Options()) or isinstance(options_set.set_label, bool):
             options_set = self.set_options_name(options_set)
@@ -166,16 +169,20 @@ class Metadata:
 
         self.enforce_unnamed_option_sets_limit()
 
+        self.write()
+        if terminate:
+            raise SystemExit
+
     def set_options_name(self, options_set: Options) -> Options:
         if options_set.set_label:
             if isinstance(options_set.set_label, bool):
                 options_set = OptionsHistory()()
                 self.options_history.remove(options_set)
-                options_set._options_set_name = options_name_dialog(options_set)
+                options_set.options_set_name = options_name_dialog(options_set)
 
             if isinstance(options_set.set_label, str):
                 self.options_history.remove(options_set)
-                options_set._options_set_name = options_set.set_label.strip().replace(" ", "-")
+                options_set.options_set_name = options_set.set_label.strip().replace(" ", "-")
 
             options_set.set_label = None
             options_set.mark_time(OptionsTimeAttrs.MODIFY)
@@ -186,7 +193,7 @@ class Metadata:
         unnamed_sets: list = []
 
         for _ in self.options_history:
-            if _._options_set_name:
+            if _.options_set_name:
                 named_sets.append(_)
             else:
                 unnamed_sets.append(_)
@@ -199,3 +206,24 @@ class Metadata:
         unnamed_sets = sorted(unnamed_sets, key=lambda options_set: options_set._last_used_time_utc, reverse=True)[:self.options_history_max_unnamed_sets]
 
         self.options_history = set(named_sets) | set(unnamed_sets)
+
+    def remove_options_set(self, options_set: Options) -> None:
+
+        if options_set._remove_history_option:
+            trash_option_set: Options | None = None
+
+            if options_set.label:
+                for _ in self.options_history:
+                    if hash(options_set.label) == _.__hash__():
+                        trash_option_set = _
+                
+                if not trash_option_set:
+                    raise ValueError(f"No Option set with label found: {options_set.label}")
+
+            else:
+                trash_option_set = OptionsHistory()()
+
+            if trash_option_set:
+                self.options_history.remove(trash_option_set)
+        self.write()
+        raise SystemExit("options set removed.")

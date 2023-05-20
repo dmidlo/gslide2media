@@ -32,7 +32,7 @@ class Options:
 
     label: str | None = None
     set_label: bool | str | None = None
-    _options_set_name: str | None = None
+    options_set_name: str | None = None
     _options_max_history: int | None = None  # excludes named option sets and generic commands that manuipulate the options object.
     _remove_history_option: bool = False
     _clear_history: bool = False
@@ -81,6 +81,13 @@ class Options:
             setattr(self, key, value)
 
     def __hash__(self) -> int:
+        # if it's a named option set, __eq__ and __hash__ are calculated on just the name,
+        # whereas unnnamed option sets are calculated on the hash 
+        # of self minus self._comp_excluded_attrs.
+        
+        if self.options_set_name:
+            return hash(self.options_set_name)
+
         hash_attrs = []
         for attr, value in asdict(self).items():
             if attr not in self._comp_excluded_attrs:
@@ -96,6 +103,9 @@ class Options:
 
         if not isinstance(other, self.__class__):
             return False
+        
+        if self.options_set_name and self.options_set_name == other.options_set_name:
+            return True
 
         return all(
             _self[1] == _other[1]

@@ -41,7 +41,7 @@ class OptionsHistory:
     def get_options_view(self, options_set: Options) -> str:
 
         return (
-            f"Label: {options_set._options_set_name}\n"
+            f"Label: {options_set.options_set_name}\n"
             f"    Sources:  presentation_id(s): {options_set.presentation_id}\n"
             f"              folder_id(s): {options_set.folder_id}\n"
             f"              custom_presentation(s): {options_set.custom_presentation}\n"
