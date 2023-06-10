@@ -17,9 +17,9 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from gslide2media.options import Options
-from gslide2media.cli.tools import OptionsHistory
-from gslide2media.cli.tools import options_name_dialog
-from gslide2media.cli.tools import options_clear_confirm
+from gslide2media.cli.commands import OptionsHistory
+from gslide2media.cli.commands import options_name_dialog
+from gslide2media.cli.commands import options_clear_confirm
 from gslide2media.cli.modifiers import _fix_path_strings
 from gslide2media.enums import OptionsTimeAttrs
 

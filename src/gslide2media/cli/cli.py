@@ -3,6 +3,7 @@ import argparse
 
 from gslide2media.options import Options
 from gslide2media.enums import OptionsSource
+from gslide2media.enums import ExportFormats
 from gslide2media import config
 
 from .validators import _check_int_or_none
@@ -38,6 +39,7 @@ class ArgParser(argparse.ArgumentParser):
         self._default_args = self.arg_namespace.__dict__
         self.set_defaults(**self._default_args)
         self._build_parser()
+        self._set_args()
 
     def __call__(self) -> Options:
         """Collect and process settings from CLI or API.
@@ -46,11 +48,9 @@ class ArgParser(argparse.ArgumentParser):
             Options: arg_namespace for config.ARGS
         """
 
-        self._set_args()
         _check_should_print_help(self)
         self.arg_namespace = _check_for_tools_and_run(self.arg_namespace)
         self._sanitize_input()
-        self.arg_namespace.options_set_name = "a"
         self.arg_namespace = config.META.parse_options_history_args(self.arg_namespace)
 
         return self.arg_namespace
@@ -185,9 +185,41 @@ class ArgParser(argparse.ArgumentParser):
 
     def _set_args(self):
         self._add_standard_args(self)
+        self._add_standard_args(self.interactive_parser)
         self._add_options_history_args(self.history_parser)
         self._add_options_history_args(self.history_remove)
         self._add_clear_force_arg(self.history_clear)
+
+    def _sanitize_input(self):
+        # Pre-parse
+        _check_allow_only_mp4_slide_or_total_duration_not_both(
+            self.arg_namespace.mp4_slide_duration_secs,
+            self.arg_namespace.mp4_total_video_duration,
+        )
+
+        if self.arg_namespace._interactive:
+            print("here")
+        # Parse
+        if ("gslide2media" not in sys.argv[0] and self.arg_namespace.options_source is OptionsSource.API) or self.arg_namespace._interactive:
+            print("here")
+            args = self._prepare_from_api_args()
+            self.parse_args(args, namespace=self.arg_namespace)
+        else:
+            print("there")
+            # Get the args from sys.argv
+            self.parse_args(namespace=self.arg_namespace)
+
+        # Post-Parse
+        (
+            self.arg_namespace.screen_width,
+            self.arg_namespace.screen_height,
+        ) = _set_screen_dimensions(
+            self.arg_namespace.aspect_ratio,
+            self.arg_namespace.screen_width,
+            self.arg_namespace.screen_height,
+        )
+
+        self.arg_namespace = _fix_path_strings(self.arg_namespace)
 
     def _prepare_from_api_args(self):
         """Build the args list from api Options.
@@ -196,48 +228,23 @@ class ArgParser(argparse.ArgumentParser):
             list: args
         """
         args = []
+        if self.arg_namespace.presentation_id:
+            args.extend(["--presentation-id", *self.arg_namespace.presentation_id])
+
         if self.arg_namespace.folder_id:
-            args.append("folder")
-            args.extend(["--folder-id", self.arg_namespace.folder_id])
+            args.extend(["--folder-id", *self.arg_namespace.folder_id])
 
-            if self.arg_namespace.run_all:
-                args.append("--run-all")
+        if self.arg_namespace.custom_presentation:
+            args.extend(["--custom-presentation", self.arg_namespace.custom_presentation])
 
-        elif self.arg_namespace.presentation_id:
-            args.append("presentation")
-            args.extend(["--presentation-id", self.arg_namespace.presentation_id])
+        if self.arg_namespace.file_formats:
+            args.extend(["--file-formats", *self.arg_namespace.file_formats])
 
-        if self.arg_namespace.image_file_format:
-            args.extend(["--image-file-format", self.arg_namespace.image_file_format])
-
-        if self.arg_namespace.dpi:
-            args.extend(["--dpi", str(self.arg_namespace.dpi)])
-
-        if self.arg_namespace.aspect_ratio:
-            args.extend(["--aspect-ratio", self.arg_namespace.aspect_ratio])
-
-        if self.arg_namespace.screen_width:
-            args.extend(["--screen-width", str(self.arg_namespace.screen_width)])
-
-        if self.arg_namespace.screen_height:
-            args.extend(["--screen-height", str(self.arg_namespace.screen_height)])
+        if self.arg_namespace.run_all:
+            args.append("--run-all")
 
         if self.arg_namespace.download_directory:
             args.extend(["--download-directory", self.arg_namespace.download_directory])
-
-        if self.arg_namespace.credentials_pattern:
-            args.extend(
-                ["--credentials-pattern", self.arg_namespace.credentials_pattern]
-            )
-
-        if self.arg_namespace.credentials_file:
-            args.extend(["--credentials-file", self.arg_namespace.credentials_file])
-
-        if self.arg_namespace.token_pattern:
-            args.extend(["--token-pattern", self.arg_namespace.token_pattern])
-
-        if self.arg_namespace.token_file:
-            args.extend(["--token-file", self.arg_namespace.token_file])
 
         if self.arg_namespace.mp4_slide_duration_secs:
             args.extend(
@@ -255,39 +262,25 @@ class ArgParser(argparse.ArgumentParser):
                 ]
             )
 
-        if self.arg_namespace.save_images_to_file:
-            args.append("--save-images-to-file")
+        if self.arg_namespace.fps:
+            args.extend(["--fps", str(self.arg_namespace.fps)])
 
-        if self.arg_namespace.save_mp4_to_file:
-            args.append("--save-mp4-to-file")
+        if self.arg_namespace.jpeg_quality:
+            args.extend(["--jpeg-quality", str(self.arg_namespace.jpeg_quality)])
+
+        if self.arg_namespace.aspect_ratio:
+            args.extend(["--aspect-ratio", self.arg_namespace.aspect_ratio])
+
+        if self.arg_namespace.dpi:
+            args.extend(["--dpi", str(self.arg_namespace.dpi)])
+
+        if self.arg_namespace.screen_width:
+            args.extend(["--screen-width", str(self.arg_namespace.screen_width)])
+
+        if self.arg_namespace.screen_height:
+            args.extend(["--screen-height", str(self.arg_namespace.screen_height)])
+
         return args
-
-    def _sanitize_input(self):
-        # Pre-parse
-        _check_allow_only_mp4_slide_or_total_duration_not_both(
-            self.arg_namespace.mp4_slide_duration_secs,
-            self.arg_namespace.mp4_total_video_duration,
-        )
-
-        # Parse
-        if "gslide2media" not in sys.argv[0] and self.arg_namespace.from_api:
-            args = self._prepare_from_api_args()
-            self.parse_args(args, namespace=self.arg_namespace)
-        else:
-            # Get the args from sys.argv
-            self.parse_args(namespace=self.arg_namespace)
-
-        # Post-Parse
-        (
-            self.arg_namespace.screen_width,
-            self.arg_namespace.screen_height,
-        ) = _set_screen_dimensions(
-            self.arg_namespace.aspect_ratio,
-            self.arg_namespace.screen_width,
-            self.arg_namespace.screen_height,
-        )
-
-        self.arg_namespace = _fix_path_strings(self.arg_namespace)
 
     def _add_standard_args(self, parser: argparse.ArgumentParser):
         parser.add_argument(
@@ -312,10 +305,9 @@ class ArgParser(argparse.ArgumentParser):
 
         parser.add_argument(
             "--custom-presentation",
-            nargs="+",
             type=str,
             help=(
-                "Build custom mp4s from a JSON encoded list of lists. "
+                "Build custom mp4s from a JSON encoded LIST-OF-LISTS. "
                 "(a single slide is a comma separated string of a presentation_id and slide_id) "
                 "e.g. --custom-presentation "
                 " \"[['presentation_id,slide_id', '...,...', '...,...'], [...], [...]]\""
@@ -327,7 +319,7 @@ class ArgParser(argparse.ArgumentParser):
             nargs="+",
             type=str,
             default="svg",
-            choices=["svg", "png", "jpeg"],
+            choices=ExportFormats.list_values(),
             help="Image format to use when exporting images.  svg, png, jpeg.",
         )
 

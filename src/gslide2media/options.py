@@ -10,8 +10,8 @@ from datetime import datetime, timezone
 class Options:
     presentation_id: list | None = None
     folder_id: list | None = None
-    custom_presentation: list | None = None
-    file_formats: Any = None
+    custom_presentation: str | list | None = None
+    file_formats: list = None
     run_all: bool = False
     download_directory: Path | str | None = None
 
@@ -41,7 +41,6 @@ class Options:
     clear_force: bool = False
 
     _interactive: bool = False
-    from_api: bool = False
     _tool_auth_google_api_project: bool = False
     _tool_import_client_secret: bool = False
     options_source: OptionsSource | None = None
@@ -71,7 +70,6 @@ class Options:
             "clear_history",
             "clear_force",
             "_interactive",
-            "from_api",
             "_tool_auth_google_api_project",
             "_tool_import_client_secret",
             "options_source",

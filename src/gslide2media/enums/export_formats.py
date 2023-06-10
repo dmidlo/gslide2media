@@ -44,3 +44,21 @@ class ExportFormats(StrEnum):
     SVG = auto()
     MP4 = auto()
     JSON = auto()
+
+    @classmethod
+    def list_keys(cls) -> set:
+        """Return a set containing the keys of the ExportFormats enum.
+
+        Returns:
+            Pairs (set): set of str(keys)
+        """
+        return set(cls.__members__.keys())
+
+    @classmethod
+    def list_values(cls) -> set:
+        """Return a set containing the values of the ExportFormats enum.
+
+        Returns:
+            Pairs (set): set of str(values)
+        """
+        return {member.value for _, member in cls.__members__.items()}

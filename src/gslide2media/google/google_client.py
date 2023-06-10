@@ -6,10 +6,15 @@ from pathlib import Path
 from googleapiclient.errors import HttpError
 
 from gslide2media import config
+from gslide2media.enums import DriveTypes
 
 from .auth import AuthGoogle
 
 
+# TODO: Should make this a singleton as well.
+#  making this a singleton will allow the None checks for config.GOOGLE to be removed.
+#  presently AuthGoogle is only used here in the client and therefore would be encapsulated
+#  in this singleton and would not need be one itself.
 class GoogleClient:
     def __init__(self) -> None:
         self.auth_google: AuthGoogle = AuthGoogle(config.API_SCOPES)
@@ -84,7 +89,7 @@ class GoogleClient:
                 print(f"An error occurred: {error}")
         return None
 
-    def get_folders_in_root(self) -> str:
+    def get_folders_in_root(self) -> list[dict]:
         query = "'root' in parents and mimeType='application/vnd.google-apps.folder' and trashed = false"
         results = (
             self.auth_google.drive_service.files()  # pylint: disable=no-member
@@ -93,7 +98,7 @@ class GoogleClient:
         )
         return results.get("files", [])
 
-    def get_presentations_in_root(self) -> str:
+    def get_presentations_in_root(self) -> list[dict]:
         query = "'root' in parents and mimeType='application/vnd.google-apps.presentation' and trashed = false"
         results = (
             self.auth_google.drive_service.files()  # pylint: disable=no-member
@@ -102,7 +107,7 @@ class GoogleClient:
         )
         return results.get("files", [])
 
-    def get_shared_folders(self):
+    def get_shared_folders(self) -> list[dict]:
         query = "mimeType='application/vnd.google-apps.folder' and sharedWithMe"
         results = (
             self.auth_google.drive_service.files()  # pylint: disable=no-member
@@ -111,7 +116,7 @@ class GoogleClient:
         )
         return results.get("files", [])
 
-    def get_shared_presentations(self):
+    def get_shared_presentations(self) -> list[dict]:
         query = "mimeType='application/vnd.google-apps.presentation' and sharedWithMe"
         results = (
             self.auth_google.drive_service.files()  # pylint: disable=no-member
@@ -202,7 +207,15 @@ class GoogleClient:
         except HttpError as error:
             print(f"An error occurred: {error}")
             return None
+        
+    def get_resource_type(self, resource_id: str) -> DriveTypes:
+        file = self.auth_google.drive_service.files().get(fileId=resource_id, fields='mimeType').execute()
+        mime_type = file['mimeType']
 
+        if mime_type == 'application/vnd.google-apps.folder':
+            return DriveTypes.FOLDER
+        elif mime_type == 'application/vnd.google-apps.presentation':
+            return DriveTypes.PRESENTATION
 
 class ResolvedDrivePath(NamedTuple):
     name_path: Path

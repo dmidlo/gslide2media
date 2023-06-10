@@ -2,13 +2,14 @@ from pathlib import Path
 import sys
 
 from typing import TYPE_CHECKING
+from gslide2media.enums import OptionsSource
 
 if TYPE_CHECKING:
     from .cli import ArgParser
 
 
 def _check_should_print_help(obj: "ArgParser"):
-    if not obj.arg_namespace.from_api:
+    if not obj.arg_namespace.options_source is OptionsSource.API:
         if len(sys.argv) == 1:
             obj.print_help(sys.stdout)
             raise SystemExit(0)

@@ -13,6 +13,6 @@ from gslide2media.google import GoogleClient
 
 META: Metadata
 ARGS: Options
-GOOGLE: GoogleClient
+GOOGLE: GoogleClient | None = None
 MP4_IMAGE_FILE_FORMAT: str = "png"
 API_SCOPES: list[str] = ["https://www.googleapis.com/auth/drive"]

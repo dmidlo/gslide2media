@@ -6,12 +6,16 @@ from pathlib import Path
 from gslide2media.options import Options
 from gslide2media import config
 
-from .tools import GoogleApiProject
-from .tools import ImportClientSecret
-from .tools import OptionsHistory
+from .commands.auth import GoogleApiProject
+from .commands.auth import ImportClientSecret
+from .commands import OptionsHistory
+from .commands import InteractivePrompt
+
+from rich import print
 
 
 def _check_for_tools_and_run(arg_namespace: Options):
+    # TODO: Move this back to cli.py.
     # sourcery skip: merge-duplicate-blocks, merge-nested-ifs
     if sys.argv[1] == "auth":
         if len(sys.argv) == 3:
@@ -34,6 +38,10 @@ def _check_for_tools_and_run(arg_namespace: Options):
             if history_set := OptionsHistory()():
                 return history_set
             raise ValueError("No Options Chosen.")
+
+    if sys.argv[1] == "interactive":
+        arg_namespace._interactive = True
+        arg_namespace = InteractivePrompt()(arg_namespace)
 
     return arg_namespace
 
