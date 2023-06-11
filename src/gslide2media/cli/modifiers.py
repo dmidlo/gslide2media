@@ -39,10 +39,6 @@ def _check_for_tools_and_run(arg_namespace: Options):
                 return history_set
             raise ValueError("No Options Chosen.")
 
-    if sys.argv[1] == "interactive":
-        arg_namespace._interactive = True
-        arg_namespace = InteractivePrompt()(arg_namespace)
-
     return arg_namespace
 
 

@@ -385,7 +385,7 @@ class FormatsPrompt(Prompt):
     def __init__(self, arg_namespace: Options):
         self.arg_namespace = arg_namespace
 
-        self.file_formats: list = []
+        self.file_formats: set = set()
 
     def __call__(self):
         self.prompt()
@@ -396,19 +396,21 @@ class FormatsPrompt(Prompt):
         return "Export Formats"
 
     def prompt(self):
-        export_formats = inquirer.select(
+        export_formats = set(inquirer.select(
             message="Select Export Formats",
             instruction="[space] to multi-select. [enter] to confirm.",
             choices=ExportFormats.list_values(),
             default=[].extend(config._default_file_formats.split(" ")),
             multiselect=True,
             long_instruction=self.arg_namespace.get_options_view()
-        ).execute()
+        ).execute())
 
         if not self.arg_namespace.file_formats:
-            self.arg_namespace.file_formats = export_formats
-        else:
-            self.arg_namespace.file_formats.extend(export_formats)
+            self.arg_namespace.file_formats = list(export_formats)
+        elif isinstance(self.arg_namespace.file_formats, str):
+            self.arg_namespace.file_formats = [].extend(list(set(self.arg_namespace.file_formats.split(" "))))
+        elif isinstance(self.arg_namespace.file_formats, list):
+            self.arg_namespace.file_formats.extend(list(set(self.arg_namespace.file_formats) | export_formats))
 
 
 class WorkDirPrompt(Prompt):

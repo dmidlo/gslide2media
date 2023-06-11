@@ -13,6 +13,7 @@ from .modifiers import _check_allow_only_mp4_slide_or_total_duration_not_both
 from .modifiers import _check_for_tools_and_run
 from .modifiers import _fix_path_strings
 from .modifiers import _set_screen_dimensions
+from .commands import InteractivePrompt
 
 default_options = Options(options_source=OptionsSource.DEFAULT)
 
@@ -201,7 +202,7 @@ class ArgParser(argparse.ArgumentParser):
         )
 
         # Parse
-        if ("gslide2media" not in sys.argv[0] and self.arg_namespace.options_source is OptionsSource.API) or self.arg_namespace._interactive:
+        if "gslide2media" not in sys.argv[0] and self.arg_namespace.options_source is OptionsSource.API:
             args = self._prepare_from_api_args()
             self.parse_args(args, namespace=self.arg_namespace)
         else:
@@ -217,6 +218,12 @@ class ArgParser(argparse.ArgumentParser):
             self.arg_namespace.screen_width,
             self.arg_namespace.screen_height,
         )
+
+        if sys.argv[1] == "interactive":
+            self.arg_namespace._interactive = True
+            self.arg_namespace = InteractivePrompt()(self.arg_namespace)
+            args = self._prepare_from_api_args()
+            self.parse_args(args, namespace=self.arg_namespace)
 
         self.arg_namespace = _fix_path_strings(self.arg_namespace)
 
