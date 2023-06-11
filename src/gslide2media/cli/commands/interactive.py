@@ -9,6 +9,8 @@ from pathlib import Path
 
 from InquirerPy import inquirer
 from InquirerPy.prompts.input import InputPrompt
+from InquirerPy.validator import PathValidator
+from InquirerPy.validator import EmptyInputValidator
 
 from InquirerPy.utils import (
     InquirerPyDefault,
@@ -21,7 +23,6 @@ from InquirerPy.utils import (
 
 from prompt_toolkit.completion import Completer
 from prompt_toolkit.completion import Completion
-from prompt_toolkit.completion import NestedCompleter
 from prompt_toolkit.completion.base import ThreadedCompleter
 
 from rich import print
@@ -65,7 +66,10 @@ class PresentationIDs(Prompt):
         return "Add presentation by ID"
 
     def prompt(self):
-        presentation_id = inquirer.text(message="Enter a presentation ID:").execute()
+        presentation_id = inquirer.text(
+            message="Enter a presentation ID:",
+            long_instruction=self.arg_namespace.get_options_view()
+        ).execute()
 
         if self.arg_namespace.presentation_id:
             self.arg_namespace.presentation_id.append(presentation_id)
@@ -73,7 +77,8 @@ class PresentationIDs(Prompt):
             self.arg_namespace.presentation_id = [presentation_id]
 
         if inquirer.confirm(
-            message="Would you like to add another presentation ID?"
+            message="Would you like to add another presentation ID?",
+            long_instruction=self.arg_namespace.get_options_view()
         ).execute():
             self.prompt()
 
@@ -91,7 +96,10 @@ class FolderIDs(Prompt):
         return "Add folder by ID"
 
     def prompt(self):
-        folder_id = inquirer.text(message="Enter a folder ID:").execute()
+        folder_id = inquirer.text(
+            message="Enter a folder ID:",
+            long_instruction=self.arg_namespace.get_options_view()
+        ).execute()
 
         if self.arg_namespace.folder_id:
             self.arg_namespace.folder_id.append(folder_id)
@@ -99,7 +107,8 @@ class FolderIDs(Prompt):
             self.arg_namespace.folder_id = [folder_id]
 
         if inquirer.confirm(
-            message="Would you like to add another folder ID?"
+            message="Would you like to add another folder ID?",
+            long_instruction=self.arg_namespace.get_options_view()
         ).execute():
             self.prompt()
 
@@ -120,6 +129,7 @@ class RunAll(Prompt):
         run_all = inquirer.confirm(
             message="Process all presentations?",
             default=True,
+            long_instruction=self.arg_namespace.get_options_view()
         ).execute()
 
         self.arg_namespace.run_all = run_all
@@ -282,23 +292,25 @@ class Browse(Prompt):
         if not config.GOOGLE:
             config.GOOGLE = GoogleClient()
 
-        self.presentations: list = []
-        self.folders: list = []
+        self.presentations: set = set()
+        self.folders: set = set()
         self.arg_namespace = arg_namespace
 
     def __call__(self) -> Options:
         self.prompt()
+        self.update_arg_namespace()
+        return self.arg_namespace
+    
+    def update_arg_namespace(self):
         if not self.arg_namespace.folder_id:
-            self.arg_namespace.folder_id = self.folders
+            self.arg_namespace.folder_id = list(self.folders)
         else:
-            self.arg_namespace.folder_id.extend(self.folders)
+            self.arg_namespace.folder_id = list(set(self.arg_namespace.folder_id) | self.folders)
         
         if not self.arg_namespace.presentation_id:
-            self.arg_namespace.presentation_id = self.presentations
+            self.arg_namespace.presentation_id = list(self.presentations)
         else:
-            self.arg_namespace.folder_id.extend(self.presentations)
-
-        return self.arg_namespace
+            self.arg_namespace.presentation_id = list(set(self.arg_namespace.presentation_id) | self.presentations)
 
     @staticmethod
     def message():
@@ -308,19 +320,23 @@ class Browse(Prompt):
         path = inquirer.drivepath(
             message="Enter path to a folder or presentation:",
             instruction="'/' enables autocompletion for folders.",
+            long_instruction=self.arg_namespace.get_options_view()
         ).execute()
 
         resource_id = path.split("/")[-1] if path.split("/")[-1] != '' else path.split("/")[-2]
         resource_type = config.GOOGLE.get_resource_type(resource_id)
 
         if resource_type is DriveTypes.FOLDER:
-            self.folders.append(resource_id)
+            self.folders.add(resource_id)
         if resource_type is DriveTypes.PRESENTATION:
-            self.presentations.append(resource_id)
+            self.presentations.add(resource_id)
+
+        self.update_arg_namespace()
 
         if inquirer.confirm(
             message="Would you like to add another Folder or Presentation?",
             default=True,
+            long_instruction=self.arg_namespace.get_options_view()
         ).execute():
             self.prompt()
 
@@ -348,7 +364,9 @@ class PresentationPrompt(Prompt):
 
         while exit_code:
             subprompt_select = inquirer.rawlist(
-                message="Set Options Group:", choices=choices
+                message="Set Options Group:",
+                choices=choices,
+                long_instruction=self.arg_namespace.get_options_view()
             ).execute()
 
             prompt_index = (
@@ -363,7 +381,7 @@ class PresentationPrompt(Prompt):
                 exit_code = False
 
 
-class FormatsPrompt:
+class FormatsPrompt(Prompt):
     def __init__(self, arg_namespace: Options):
         self.arg_namespace = arg_namespace
 
@@ -382,7 +400,9 @@ class FormatsPrompt:
             message="Select Export Formats",
             instruction="[space] to multi-select. [enter] to confirm.",
             choices=ExportFormats.list_values(),
-            multiselect=True
+            default=[].extend(config._default_file_formats.split(" ")),
+            multiselect=True,
+            long_instruction=self.arg_namespace.get_options_view()
         ).execute()
 
         if not self.arg_namespace.file_formats:
@@ -391,51 +411,173 @@ class FormatsPrompt:
             self.arg_namespace.file_formats.extend(export_formats)
 
 
-class WorkDirPrompt:
-    def __init__(self):
+class WorkDirPrompt(Prompt):
+    def __init__(self, arg_namespace: Options):
+        self.arg_namespace = arg_namespace
         self.download_directory: Path | str | None = None
 
     def __call__(self):
-        return self.prompt()
+        self.prompt()
+        return self.arg_namespace
 
     @staticmethod
     def message():
         return "Working Directory"
 
     def prompt(self):
-        return
+        self.download_directory = inquirer.filepath(
+            message="Enter path to your working directory:",
+            default=str(Path().resolve()),
+            validate=PathValidator(is_dir=True, message="Input is not a directory"),
+            only_directories=True,
+            long_instruction=self.arg_namespace.get_options_view()
+        ).execute()
+
+        self.arg_namespace.download_directory = self.download_directory
 
 
-class VideoPrompt:
-    def __init__(self):
+class SlideDuration(Prompt):
+    def __init__(self, arg_namespace: Options):
+        self.arg_namespace = arg_namespace
+
+        self.mp4_slide_duration_secs: int | None = None
+    
+    def __call__(self):
+        self.prompt()
+        return self.arg_namespace
+    
+    @staticmethod
+    def message():
+        return "Set Slide Duration in Seconds."
+
+    def prompt(self):
+        self.mp4_slide_duration_secs = inquirer.number(
+            message="Enter a Slide Duration in Seconds:",
+            validate=EmptyInputValidator(),
+            default=config._default_slide_duration_secs,
+            long_instruction=self.arg_namespace.get_options_view()
+        ).execute()
+
+        self.arg_namespace.mp4_slide_duration_secs = self.mp4_slide_duration_secs
+    
+
+class VideoDuration(Prompt):
+    def __init__(self, arg_namespace: Options):
+        self.arg_namespace = arg_namespace
+
+        self.mp4_total_video_duration: int | None = None
+    
+    def __call__(self):
+        self.prompt()
+        return self.arg_namespace
+    
+    @staticmethod
+    def message():
+        return "Set Total Video Duration in Seconds."
+
+    def prompt(self):
+        self.mp4_total_video_duration = inquirer.number(
+            message="Enter a Total Video Duration in Seconds:",
+            default=config._default_mp4_total_video_duration,
+            validate=EmptyInputValidator(),
+            long_instruction=self.arg_namespace.get_options_view()
+        ).execute()
+
+        self.arg_namespace.mp4_total_video_duration = self.mp4_total_video_duration
+    
+
+class Fps(Prompt):
+    def __init__(self, arg_namespace: Options):
+        self.arg_namespace = arg_namespace
+
+        self.fps: int | None = None
+    
+    def __call__(self):
+        self.prompt()
+        return self.arg_namespace
+    
+    @staticmethod
+    def message():
+        return "Set the Framerate in FPS (frames per second)."
+
+    def prompt(self):
+        self.fps = inquirer.number(
+            message="Enter a Framerate as FPS:",
+            validate=EmptyInputValidator(),
+            default=config._default_fps,
+            long_instruction=self.arg_namespace.get_options_view()
+        ).execute()
+
+        self.arg_namespace.fps = self.fps
+
+
+class VideoPrompt(Prompt):
+    def __init__(self, arg_namespace: Options):
+        self.arg_namespace = arg_namespace
+
         self.mp4_slide_duration_secs: int | None = None
         self.mp4_total_video_duration: int | None = None
         self.fps: int | None = None
 
+        self.prompts = [SlideDuration, VideoDuration, Fps]
+
     def __call__(self):
-        return self.prompt()
+        self.prompt()
+        return self.arg_namespace
 
     @staticmethod
     def message():
         return "Video Options"
 
     def prompt(self):
-        return
+        exit_code = True
+
+        choices = InteractivePrompt.get_subprompt_messages(self)
+        additional_choices = ["back"]
+        choices.extend(additional_choices)
+
+        while exit_code:
+            subprompt_select = inquirer.rawlist(
+                message="Set Video Options:",
+                choices=choices,
+                long_instruction=self.arg_namespace.get_options_view()
+            ).execute()
+
+            prompt_index = (
+                choices.index(subprompt_select)
+                if subprompt_select not in additional_choices
+                else None
+            )
+
+            if prompt_index is not None:
+                self.arg_namespace = self.prompts[prompt_index](self.arg_namespace)()
+            else:
+                exit_code = False
 
 
 class ImagePrompt:
-    def __init__(self):
+    def __init__(self, arg_namespace: Options):
+        self.arg_namespace = arg_namespace
+
         self.jpeg_quality: int | None = None
 
     def __call__(self):
-        return self.prompt()
+        self.prompt()
+        return self.arg_namespace
 
     @staticmethod
     def message():
         return "Image Options"
 
     def prompt(self):
-        return
+        self.jpeg_quality = inquirer.number(
+            message="Enter a jpeg quality:",
+            validate=EmptyInputValidator(),
+            default=config._default_jpeg_quality,
+            long_instruction=self.arg_namespace.get_options_view()
+        ).execute()
+
+        self.arg_namespace.jpeg_quality = self.jpeg_quality
 
 
 class ScreenSettingsPrompt:
@@ -457,18 +599,28 @@ class ScreenSettingsPrompt:
 
 
 class LabeledOptionsPrompt:
-    def __init__(self):
-        self.set_label: bool | str | None = None
+    def __init__(self, arg_namespace: Options):
+        self.arg_namespace = arg_namespace
+
+        self.options_set_name: bool | str | None = None
 
     def __call__(self):
-        return self.prompt()
+        self.prompt()
+        return self.arg_namespace
 
     @staticmethod
     def message():
         return "Set Label for Options Set"
 
     def prompt(self):
-        return
+        self.options_set_name = inquirer.text(
+            message="Enter label name for options set:",
+            long_instruction=self.arg_namespace.get_options_view()
+        ).execute()
+
+        self.arg_namespace.options_set_name = (
+            self.options_set_name.strip().replace(" ", "-")
+        )
 
 
 class InteractivePrompt:
@@ -496,7 +648,9 @@ class InteractivePrompt:
 
         while exit_code:
             subprompt_select = inquirer.rawlist(
-                message="Set Options Group:", choices=choices
+                message="Set Options Group:",
+                choices=choices,
+                long_instruction=arg_namespace.get_options_view()
             ).execute()
 
             if subprompt_select == "Run":

@@ -8,8 +8,8 @@ from gslide2media import config
 
 from .validators import _check_int_or_none
 from .validators import _check_string_is_pathlike
-from .validators import _check_allow_only_mp4_slide_or_total_duration_not_both
 from .validators import _check_should_print_help
+from .modifiers import _check_allow_only_mp4_slide_or_total_duration_not_both
 from .modifiers import _check_for_tools_and_run
 from .modifiers import _fix_path_strings
 from .modifiers import _set_screen_dimensions
@@ -192,20 +192,19 @@ class ArgParser(argparse.ArgumentParser):
 
     def _sanitize_input(self):
         # Pre-parse
-        _check_allow_only_mp4_slide_or_total_duration_not_both(
+        (
+            self.arg_namespace.mp4_slide_duration_secs,
+            self.arg_namespace.mp4_total_video_duration,
+        ) = _check_allow_only_mp4_slide_or_total_duration_not_both(
             self.arg_namespace.mp4_slide_duration_secs,
             self.arg_namespace.mp4_total_video_duration,
         )
 
-        if self.arg_namespace._interactive:
-            print("here")
         # Parse
         if ("gslide2media" not in sys.argv[0] and self.arg_namespace.options_source is OptionsSource.API) or self.arg_namespace._interactive:
-            print("here")
             args = self._prepare_from_api_args()
             self.parse_args(args, namespace=self.arg_namespace)
         else:
-            print("there")
             # Get the args from sys.argv
             self.parse_args(namespace=self.arg_namespace)
 
@@ -318,7 +317,7 @@ class ArgParser(argparse.ArgumentParser):
             "--file-formats",
             nargs="+",
             type=str,
-            default="svg",
+            default=config._default_file_formats,
             choices=ExportFormats.list_values(),
             help="Image format to use when exporting images.  svg, png, jpeg.",
         )
@@ -346,7 +345,7 @@ class ArgParser(argparse.ArgumentParser):
         mp4.add_argument(
             "--mp4-slide-duration-secs",
             type=int,
-            default=20,
+            default=config._default_slide_duration_secs,
             help=(
                 "Amount of time in secs each slide should play when presentation "
                 "is converted to video"
@@ -355,7 +354,7 @@ class ArgParser(argparse.ArgumentParser):
         mp4.add_argument(
             "--mp4-total-video-duration",
             type=_check_int_or_none,
-            default=None,
+            default=config._default_mp4_total_video_duration,
             help=(
                 "Total duration of mp4 video.  Subject to system modification based on "
                 "--mp4-slide-duration-secs or if presentation has transitions or embedded video."
@@ -364,7 +363,7 @@ class ArgParser(argparse.ArgumentParser):
         mp4.add_argument(
             "--fps",
             type=int,
-            default=10,
+            default=config._default_fps,
             help=(
                 "Base frames-per-second. Subject to system modification if presentation has "
                 "transitions or embedded video."
@@ -376,7 +375,7 @@ class ArgParser(argparse.ArgumentParser):
         image.add_argument(
             "--jpeg-quality",
             type=int,
-            default=90,
+            default=config._default_jpeg_quality,
             help=("Quality level of exported jpeg images."),
         )
 
@@ -385,25 +384,25 @@ class ArgParser(argparse.ArgumentParser):
         screen.add_argument(
             "--aspect-ratio",
             type=str,
-            default="16:9",
+            default=config._default_aspect_ratio,
             help="Destination screen's aspect ratio, e.g. 16:9, delimited by ':'",
         )
         screen.add_argument(
             "--dpi",
             type=int,
-            default=300,
+            default=config._default_dpi,
             help="Dots Per Inch (DPI) of output image(s) or video(s).",
         )
         screen.add_argument(
             "--screen-width",
             type=int,
-            default=3456,
+            default=config._default_screen_width,
             help="Screen width in Pixels of output image(s) or video(s).",
         )
         screen.add_argument(
             "--screen-height",
             type=int,
-            default=2234,
+            default=config._default_screen_height,
             help="Screen height in Pixels of output image(s) or video(s).",
         )
 

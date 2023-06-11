@@ -75,3 +75,27 @@ def _set_screen_dimensions(aspect_ratio: str, input_width: int, input_height: in
     screen_height: Optional[int] = input_height or aspect_height
 
     return screen_width, screen_height
+
+
+def _check_allow_only_mp4_slide_or_total_duration_not_both(
+    mp4_slide_duration_secs: int | str | None, mp4_total_duration_secs: int | str | None
+):
+    if isinstance(mp4_total_duration_secs, str) and mp4_total_duration_secs.isnumeric():
+        if int(mp4_total_duration_secs) == 0:
+            mp4_total_duration_secs = None
+        else:
+            mp4_total_duration_secs = int(mp4_total_duration_secs)
+
+    if isinstance(mp4_slide_duration_secs, str) and mp4_slide_duration_secs.isnumeric():
+        if int(mp4_slide_duration_secs) == 0:
+            mp4_slide_duration_secs = None
+        else:
+            mp4_slide_duration_secs = int(mp4_slide_duration_secs)
+
+    if mp4_slide_duration_secs is not None and mp4_total_duration_secs is not None:
+        raise ValueError(
+            "Must Specify either 'mp4_slide_duration_secs' or 'mp4_total_video_duration', "
+            "but not both."
+        )
+    
+    return mp4_slide_duration_secs, mp4_total_duration_secs

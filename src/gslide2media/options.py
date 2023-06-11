@@ -115,6 +115,25 @@ class Options:
             if _self[0] not in self._comp_excluded_attrs
         )
 
+    def get_options_view(self):
+        return (
+            f"Label: {self.options_set_name}\n"
+            f"    Sources:  presentation_id(s): {self.presentation_id}\n"
+            f"              folder_id(s): {self.folder_id}\n"
+            f"              custom_presentation(s): {self.custom_presentation}\n"
+            f"    System:   file_format(s): {self.file_formats}\n"
+            f"              download_directory: {self.download_directory}\n"
+            f"              run_all: {self.run_all}\n"
+            f"    Screen:   aspect_ratio: {self.aspect_ratio}\n"
+            f"              dpi: {self.dpi}\n"
+            f"              screen_width: {self.screen_width}\n"
+            f"              screen_height: {self.screen_height}\n"
+            f"    Video:    mp4_slide_duration_secs: {self.mp4_slide_duration_secs}\n"
+            f"              mp4_total_video_duration: {self.mp4_total_video_duration}\n"
+            f"              fps: {self.fps}\n"
+            f"    Image:    jpeg_quality: {self.jpeg_quality}\n"
+        )
+
     def mark_time(self, action: OptionsTimeAttrs) -> None:
         utc_timestamp = int(datetime.now(timezone.utc).timestamp())
         match action:

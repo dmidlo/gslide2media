@@ -39,13 +39,3 @@ def _check_string_is_pathlike(string: str) -> None | str:
         raise ValueError("directory or file path is not pathlike.") from err
 
     return string  # type:ignore
-
-
-def _check_allow_only_mp4_slide_or_total_duration_not_both(
-    mp4_slide_duration_secs: int, mp4_total_duration_secs: int
-):
-    if mp4_slide_duration_secs and mp4_total_duration_secs:
-        raise ValueError(
-            "Must Specify either 'mp4_slide_duration_secs' or 'mp4_total_video_duration', "
-            "but not both."
-        )

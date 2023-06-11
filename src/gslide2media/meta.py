@@ -163,7 +163,7 @@ class Metadata:
         terminate = isinstance(options_set.set_label, bool)
 
         if options_set != _fix_path_strings(Options()) or isinstance(
-            options_set.set_label, bool
+            options_set.set_label, (str, bool)
         ):
             options_set = self.set_options_name(options_set)
             options_set.mark_time(OptionsTimeAttrs.LAST_USED)

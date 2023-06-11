@@ -16,3 +16,13 @@ ARGS: Options
 GOOGLE: GoogleClient | None = None
 MP4_IMAGE_FILE_FORMAT: str = "png"
 API_SCOPES: list[str] = ["https://www.googleapis.com/auth/drive"]
+
+_default_file_formats = "mp4 svg"
+_default_slide_duration_secs = 20
+_default_mp4_total_video_duration = 0
+_default_fps = 10
+_default_jpeg_quality = 90
+_default_aspect_ratio = "16:9"
+_default_dpi = 300
+_default_screen_width = 3456
+_default_screen_height = 2234
