@@ -53,45 +53,34 @@ def _fix_path_strings(arg_namespace: Options):
     return arg_namespace
 
 
-def _set_screen_dimensions(aspect_ratio: str, input_width: int, input_height: int):
-    aspect_ratio_tuple = (
-        tuple(aspect_ratio.split(":")) if aspect_ratio else "".split(":")
-    )  # TODO: HACK until screen_types enum is implemented.
-    aspect_width: int | None = (
-        int(input_height * (int(aspect_ratio_tuple[0]) / int(aspect_ratio_tuple[1])))
-        if input_height
-        else None
-    )
-    aspect_height: Optional[int] | None = (
-        int(input_width * (int(aspect_ratio_tuple[1]) / int(aspect_ratio_tuple[0])))
-        if input_width
-        else None
-    )
-    screen_width: Optional[int] = input_width or aspect_width
-    screen_height: Optional[int] = input_height or aspect_height
+def _check_numeric_one_or_the_other_not_both(**kwargs):
+    arg1_name, arg2_name, _ = kwargs.keys()
+    arg1, arg2, instance_type = kwargs.values()
 
-    return screen_width, screen_height
-
-
-def _check_allow_only_mp4_slide_or_total_duration_not_both(
-    mp4_slide_duration_secs: int | str | None, mp4_total_duration_secs: int | str | None
-):
-    if isinstance(mp4_total_duration_secs, str) and mp4_total_duration_secs.isnumeric():
-        if int(mp4_total_duration_secs) == 0:
-            mp4_total_duration_secs = None
+    if (isinstance(arg1, str) and arg1.isnumeric()) or isinstance(arg1, (int, float)):
+        if int(arg1) == 0:
+            arg1 = None
         else:
-            mp4_total_duration_secs = int(mp4_total_duration_secs)
+            if isinstance(instance_type, int):
+                arg1 = int(arg1)
+            if isinstance(instance_type, float):
+                arg1 = float(arg1)
 
-    if isinstance(mp4_slide_duration_secs, str) and mp4_slide_duration_secs.isnumeric():
-        if int(mp4_slide_duration_secs) == 0:
-            mp4_slide_duration_secs = None
+    if (isinstance(arg2, str) and arg2.isnumeric()) or isinstance(arg2, (int, float)):
+        if int(arg2) == 0:
+            arg2 = None
         else:
-            mp4_slide_duration_secs = int(mp4_slide_duration_secs)
+            if isinstance(instance_type, int):
+                arg2 = int(arg2)
+            if isinstance(instance_type, float):
+                arg2 = float(arg2)
 
-    if mp4_slide_duration_secs is not None and mp4_total_duration_secs is not None:
+    if arg1 is not None and arg2 is not None:
         raise ValueError(
-            "Must Specify either 'mp4_slide_duration_secs' or 'mp4_total_video_duration', "
+            f"Must Specify either '{arg1_name}' or '{arg2_name}', "
             "but not both."
         )
     
-    return mp4_slide_duration_secs, mp4_total_duration_secs
+    return arg1, arg2
+
+    raise SystemExit

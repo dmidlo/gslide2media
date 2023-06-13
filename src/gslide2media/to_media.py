@@ -4,6 +4,7 @@ from typing import Generator
 from gslide2media.cli import ArgParser
 from gslide2media.google import GoogleClient
 from gslide2media.options import Options
+from gslide2media.screen import Screen
 
 from gslide2media import config
 from gslide2media.meta import Metadata
@@ -17,6 +18,9 @@ class ToMedia:
         config.META = Metadata.metadata_singleton_factory()
 
         config.ARGS = ArgParser(options)()
+
+        if not config.SCREEN:
+            config.SCREEN = config._default_screen
 
         if not config.GOOGLE:
             config.GOOGLE = GoogleClient()

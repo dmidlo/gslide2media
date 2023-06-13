@@ -21,8 +21,8 @@ class Options:
 
     jpeg_quality: int | None = None
 
-    aspect_ratio: str | None = None
-    dpi: int | None = None
+    diagonal: float | None = None
+    diagonal_cm: float | None = None
     screen_width: int | None = None
     screen_height: int | None = None
 
@@ -116,18 +116,20 @@ class Options:
         )
 
     def get_options_view(self):
+        label = 'None' if isinstance(self.set_label, bool) or self.set_label is None else self.set_label.strip().lower().replace(" ", "-")
+
         return (
-            f"Label: {self.options_set_name}\n"
+            f"Label: {self.options_set_name or label}\n"
             f"    Sources:  presentation_id(s): {self.presentation_id}\n"
             f"              folder_id(s): {self.folder_id}\n"
             f"              custom_presentation(s): {self.custom_presentation}\n"
             f"    System:   file_format(s): {self.file_formats}\n"
             f"              download_directory: {self.download_directory}\n"
             f"              run_all: {self.run_all}\n"
-            f"    Screen:   aspect_ratio: {self.aspect_ratio}\n"
-            f"              dpi: {self.dpi}\n"
-            f"              screen_width: {self.screen_width}\n"
-            f"              screen_height: {self.screen_height}\n"
+            f"    Screen:   diagonal (in): {self.diagonal}in\n"
+            f"              diagonal (cm): {self.diagonal_cm}cm\n"
+            f"              screen_width: {self.screen_width}px\n"
+            f"              screen_height: {self.screen_height}px\n"
             f"    Video:    mp4_slide_duration_secs: {self.mp4_slide_duration_secs}\n"
             f"              mp4_total_video_duration: {self.mp4_total_video_duration}\n"
             f"              fps: {self.fps}\n"

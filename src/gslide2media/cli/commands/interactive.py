@@ -287,7 +287,7 @@ class DrivePathPrompt(InputPrompt):
 inquirer.drivepath = DrivePathPrompt
 
 
-class Browse(Prompt):
+class BrowseDrive(Prompt):
     def __init__(self, arg_namespace: Options):
         if not config.GOOGLE:
             config.GOOGLE = GoogleClient()
@@ -341,11 +341,11 @@ class Browse(Prompt):
             self.prompt()
 
 
-class PresentationPrompt(Prompt):
+class Presentation(Prompt):
     def __init__(self, arg_namespace: Options):
         self.arg_namespace = arg_namespace
 
-        self.prompts: list = [Browse, RunAll, PresentationIDs, FolderIDs]
+        self.prompts: list = [BrowseDrive, RunAll, PresentationIDs, FolderIDs]
 
     def __call__(self):
         self.prompt()
@@ -381,7 +381,7 @@ class PresentationPrompt(Prompt):
                 exit_code = False
 
 
-class FormatsPrompt(Prompt):
+class Formats(Prompt):
     def __init__(self, arg_namespace: Options):
         self.arg_namespace = arg_namespace
 
@@ -400,20 +400,22 @@ class FormatsPrompt(Prompt):
             message="Select Export Formats",
             instruction="[space] to multi-select. [enter] to confirm.",
             choices=ExportFormats.list_values(),
-            default=[].extend(config._default_file_formats.split(" ")),
+            default=self.arg_namespace.file_formats if self.arg_namespace.file_formats is not None else config._default_file_formats,
             multiselect=True,
             long_instruction=self.arg_namespace.get_options_view()
         ).execute())
 
         if not self.arg_namespace.file_formats:
             self.arg_namespace.file_formats = list(export_formats)
-        elif isinstance(self.arg_namespace.file_formats, str):
-            self.arg_namespace.file_formats = [].extend(list(set(self.arg_namespace.file_formats.split(" "))))
-        elif isinstance(self.arg_namespace.file_formats, list):
-            self.arg_namespace.file_formats.extend(list(set(self.arg_namespace.file_formats) | export_formats))
+        
+        if isinstance(self.arg_namespace.file_formats, str):
+            self.arg_namespace.file_formats = list(set(self.arg_namespace.file_formats.split(" ")) | export_formats)
+        
+        if isinstance(self.arg_namespace.file_formats, list):
+            self.arg_namespace.file_formats = list(set(self.arg_namespace.file_formats) | export_formats)
 
 
-class WorkDirPrompt(Prompt):
+class WorkDir(Prompt):
     def __init__(self, arg_namespace: Options):
         self.arg_namespace = arg_namespace
         self.download_directory: Path | str | None = None
@@ -429,7 +431,7 @@ class WorkDirPrompt(Prompt):
     def prompt(self):
         self.download_directory = inquirer.filepath(
             message="Enter path to your working directory:",
-            default=str(Path().resolve()),
+    default=self.arg_namespace.download_directory if self.arg_namespace.download_directory is not None else str(Path().resolve()),
             validate=PathValidator(is_dir=True, message="Input is not a directory"),
             only_directories=True,
             long_instruction=self.arg_namespace.get_options_view()
@@ -456,7 +458,7 @@ class SlideDuration(Prompt):
         self.mp4_slide_duration_secs = inquirer.number(
             message="Enter a Slide Duration in Seconds:",
             validate=EmptyInputValidator(),
-            default=config._default_slide_duration_secs,
+            default=self.arg_namespace.mp4_slide_duration_secs if self.arg_namespace.mp4_slide_duration_secs is not None else config._default_slide_duration_secs,
             long_instruction=self.arg_namespace.get_options_view()
         ).execute()
 
@@ -480,7 +482,7 @@ class VideoDuration(Prompt):
     def prompt(self):
         self.mp4_total_video_duration = inquirer.number(
             message="Enter a Total Video Duration in Seconds:",
-            default=config._default_mp4_total_video_duration,
+            default=self.arg_namespace.mp4_total_video_duration if self.arg_namespace.mp4_total_video_duration is not None else config._default_mp4_total_video_duration,
             validate=EmptyInputValidator(),
             long_instruction=self.arg_namespace.get_options_view()
         ).execute()
@@ -506,14 +508,14 @@ class Fps(Prompt):
         self.fps = inquirer.number(
             message="Enter a Framerate as FPS:",
             validate=EmptyInputValidator(),
-            default=config._default_fps,
+            default=self.arg_namespace.fps if self.arg_namespace.fps is not None else config._default_fps,
             long_instruction=self.arg_namespace.get_options_view()
         ).execute()
 
         self.arg_namespace.fps = self.fps
 
 
-class VideoPrompt(Prompt):
+class Video(Prompt):
     def __init__(self, arg_namespace: Options):
         self.arg_namespace = arg_namespace
 
@@ -557,7 +559,7 @@ class VideoPrompt(Prompt):
                 exit_code = False
 
 
-class ImagePrompt:
+class Image(Prompt):
     def __init__(self, arg_namespace: Options):
         self.arg_namespace = arg_namespace
 
@@ -575,22 +577,25 @@ class ImagePrompt:
         self.jpeg_quality = inquirer.number(
             message="Enter a jpeg quality:",
             validate=EmptyInputValidator(),
-            default=config._default_jpeg_quality,
+            default=self.arg_namespace.jpeg_quality if self.arg_namespace.jpeg_quality is not None else config._default_jpeg_quality,
             long_instruction=self.arg_namespace.get_options_view()
         ).execute()
 
         self.arg_namespace.jpeg_quality = self.jpeg_quality
 
 
-class ScreenSettingsPrompt:
-    def __init__(self):
-        self.aspect_ratio: str | None = None
-        self.dpi: int | None = None
+class ScreenSettings(Prompt):
+    def __init__(self, arg_namespace: Options):
+        self.arg_namespace = arg_namespace
+
+        self.diagonal: str | None = None
+        self.diagonal_cm: int | None = None
         self.screen_width: int | None = None
         self.screen_height: int | None = None
 
     def __call__(self):
-        return self.prompt()
+        self.prompt()
+        return self.arg_namespace
 
     @staticmethod
     def message():
@@ -600,7 +605,7 @@ class ScreenSettingsPrompt:
         return
 
 
-class LabeledOptionsPrompt:
+class LabeledOptions(Prompt):
     def __init__(self, arg_namespace: Options):
         self.arg_namespace = arg_namespace
 
@@ -615,26 +620,28 @@ class LabeledOptionsPrompt:
         return "Set Label for Options Set"
 
     def prompt(self):
+        default_label = 'None' if isinstance(self.arg_namespace.set_label, bool) or self.arg_namespace.set_label is None else self.arg_namespace.set_label.strip().lower().replace(" ", "-")
         self.options_set_name = inquirer.text(
             message="Enter label name for options set:",
+            default=default_label,
             long_instruction=self.arg_namespace.get_options_view()
         ).execute()
 
         self.arg_namespace.options_set_name = (
-            self.options_set_name.strip().replace(" ", "-")
+            self.options_set_name.strip().lower().replace(" ", "-")
         )
 
 
 class InteractivePrompt:
     def __init__(self) -> None:
         self.prompts: list = [
-            PresentationPrompt,
-            FormatsPrompt,
-            VideoPrompt,
-            ImagePrompt,
-            ScreenSettingsPrompt,
-            LabeledOptionsPrompt,
-            WorkDirPrompt,
+            Presentation,
+            Formats,
+            Video,
+            Image,
+            ScreenSettings,
+            LabeledOptions,
+            WorkDir,
         ]
 
     @staticmethod

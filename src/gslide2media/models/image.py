@@ -39,11 +39,11 @@ class Image:
             case ImageExportFormats.SVG:
                 image_data = cairosvg.svg2png(
                     self.img_data,
-                    dpi=config.ARGS.dpi,
-                    parent_width=config.ARGS.screen_width,
-                    parent_height=config.ARGS.screen_height,
-                    output_width=config.ARGS.screen_width,
-                    output_height=config.ARGS.screen_height,
+                    dpi=config.SCREEN.dpi,
+                    parent_width=config.SCREEN.pixel_width,
+                    parent_height=config.SCREEN.pixel_height,
+                    output_width=config.SCREEN.pixel_width,
+                    output_height=config.SCREEN.pixel_height,
                     unsafe=True,
                 )
 
@@ -62,7 +62,7 @@ class Image:
                 with PILImage.open(BytesIO(self.img_data)) as img:
                     with BytesIO() as buffer:
                         img.resize(
-                            (config.ARGS.screen_width, config.ARGS.screen_height)
+                            (config.SCREEN.pixel_width, config.SCREEN.pixel_height)
                         )
                         img.save(buffer, format="PNG")
                         image_data = buffer.getvalue()
@@ -99,7 +99,7 @@ class Image:
         with PILImage.open(BytesIO(image_data)) as img:
             with BytesIO() as buffer:
                 img = img.convert("RGB")
-                img.resize((config.ARGS.screen_width, config.ARGS.screen_height))
+                img.resize((config.SCREEN.pixel_width, config.SCREEN.pixel_height))
                 img.save(buffer, format="JPEG", quality=config.ARGS.jpeg_quality)
                 bytes_data = buffer.getvalue()
 

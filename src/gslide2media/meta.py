@@ -22,6 +22,7 @@ from gslide2media.cli.commands import options_name_dialog
 from gslide2media.cli.commands import options_clear_confirm
 from gslide2media.cli.modifiers import _fix_path_strings
 from gslide2media.enums import OptionsTimeAttrs
+from gslide2media.screen import Screen
 
 
 @dataclass
@@ -33,6 +34,7 @@ class Metadata:
     google_client_token: Credentials | None = None
     options_history: set[Options] = field(default_factory=set[Options])
     options_history_max_unnamed_sets: int | None = None
+    named_screens: set[Screen] = field(default_factory=set[Screen])
 
     def __call__(self, **kwargs):
         for key, value in kwargs.items():
@@ -159,6 +161,8 @@ class Metadata:
 
         self(google_client_secret=data)
 
+    # TODO: All this below here could just be another class. check 'self' usage.
+
     def add_option_set(self, options_set: Options):
         terminate = isinstance(options_set.set_label, bool)
 
@@ -187,7 +191,7 @@ class Metadata:
 
             if isinstance(options_set.set_label, str):
                 self.options_history.remove(options_set)
-                options_set.options_set_name = options_set.set_label.strip().replace(
+                options_set.options_set_name = options_set.set_label.strip().lower().replace(
                     " ", "-"
                 )
 
@@ -291,3 +295,7 @@ class Metadata:
         self.add_option_set(arg_namespace)
 
         return arg_namespace
+
+    # TODO: This could be another class as well.
+
+    

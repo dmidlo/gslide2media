@@ -9,10 +9,9 @@ from gslide2media import config
 from .validators import _check_int_or_none
 from .validators import _check_string_is_pathlike
 from .validators import _check_should_print_help
-from .modifiers import _check_allow_only_mp4_slide_or_total_duration_not_both
+from .modifiers import _check_numeric_one_or_the_other_not_both
 from .modifiers import _check_for_tools_and_run
 from .modifiers import _fix_path_strings
-from .modifiers import _set_screen_dimensions
 from .commands import InteractivePrompt
 
 default_options = Options(options_source=OptionsSource.DEFAULT)
@@ -192,14 +191,6 @@ class ArgParser(argparse.ArgumentParser):
         self._add_clear_force_arg(self.history_clear)
 
     def _sanitize_input(self):
-        # Pre-parse
-        (
-            self.arg_namespace.mp4_slide_duration_secs,
-            self.arg_namespace.mp4_total_video_duration,
-        ) = _check_allow_only_mp4_slide_or_total_duration_not_both(
-            self.arg_namespace.mp4_slide_duration_secs,
-            self.arg_namespace.mp4_total_video_duration,
-        )
 
         # Parse
         if "gslide2media" not in sys.argv[0] and self.arg_namespace.options_source is OptionsSource.API:
@@ -210,20 +201,29 @@ class ArgParser(argparse.ArgumentParser):
             self.parse_args(namespace=self.arg_namespace)
 
         # Post-Parse
-        (
-            self.arg_namespace.screen_width,
-            self.arg_namespace.screen_height,
-        ) = _set_screen_dimensions(
-            self.arg_namespace.aspect_ratio,
-            self.arg_namespace.screen_width,
-            self.arg_namespace.screen_height,
-        )
-
         if sys.argv[1] == "interactive":
             self.arg_namespace._interactive = True
             self.arg_namespace = InteractivePrompt()(self.arg_namespace)
             args = self._prepare_from_api_args()
             self.parse_args(args, namespace=self.arg_namespace)
+
+        (
+            self.arg_namespace.mp4_slide_duration_secs,
+            self.arg_namespace.mp4_total_video_duration,
+        ) = _check_numeric_one_or_the_other_not_both(
+            mp4_slide_duration_secs=self.arg_namespace.mp4_slide_duration_secs,
+            mp4_total_duration_secs=self.arg_namespace.mp4_total_video_duration,
+            instance_type=int
+        )
+
+        (
+            self.arg_namespace.diagonal,
+            self.arg_namespace.diagonal_cm,
+        ) = _check_numeric_one_or_the_other_not_both(
+            diagonal=self.arg_namespace.diagonal,
+            diagonal_cm=self.arg_namespace.diagonal_cm,
+            instance_type=float
+        )
 
         self.arg_namespace = _fix_path_strings(self.arg_namespace)
 
@@ -274,17 +274,20 @@ class ArgParser(argparse.ArgumentParser):
         if self.arg_namespace.jpeg_quality:
             args.extend(["--jpeg-quality", str(self.arg_namespace.jpeg_quality)])
 
-        if self.arg_namespace.aspect_ratio:
-            args.extend(["--aspect-ratio", self.arg_namespace.aspect_ratio])
+        if self.arg_namespace.diagonal:
+            args.extend(["--diagonal", str(self.arg_namespace.diagonal)])
 
-        if self.arg_namespace.dpi:
-            args.extend(["--dpi", str(self.arg_namespace.dpi)])
+        if self.arg_namespace.diagonal_cm:
+            args.extend(["--diagonal-cm", str(self.arg_namespace.diagonal_cm)])
 
         if self.arg_namespace.screen_width:
             args.extend(["--screen-width", str(self.arg_namespace.screen_width)])
 
         if self.arg_namespace.screen_height:
             args.extend(["--screen-height", str(self.arg_namespace.screen_height)])
+
+        if self.arg_namespace.set_label:
+            args.extend(["--set-label", f"'{str(self.arg_namespace.set_label)}'"])
 
         return args
 
@@ -389,28 +392,28 @@ class ArgParser(argparse.ArgumentParser):
         screen = parser.add_argument_group("screen")
 
         screen.add_argument(
-            "--aspect-ratio",
-            type=str,
-            default=config._default_aspect_ratio,
-            help="Destination screen's aspect ratio, e.g. 16:9, delimited by ':'",
+            "--diagonal",
+            type=float,
+            help='Diagonal Measurement of Destination Screen in Inches (in ")',
+            default=config._default_diagonal
         )
         screen.add_argument(
-            "--dpi",
-            type=int,
-            default=config._default_dpi,
-            help="Dots Per Inch (DPI) of output image(s) or video(s).",
+            "--diagonal-cm",
+            type=float,
+            help='Diagonal Measurement of Destination Screen in Centimeters (cm)',
+            default=config._default_diagonal_cm
         )
         screen.add_argument(
             "--screen-width",
             type=int,
             default=config._default_screen_width,
-            help="Screen width in Pixels of output image(s) or video(s).",
+            help="Screen width in PIXELS of output image(s) or video(s).",
         )
         screen.add_argument(
             "--screen-height",
             type=int,
             default=config._default_screen_height,
-            help="Screen height in Pixels of output image(s) or video(s).",
+            help="Screen height in PIXELS of output image(s) or video(s).",
         )
 
     def _add_set_label_arg(self, parser: argparse.ArgumentParser):

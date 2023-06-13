@@ -51,6 +51,7 @@ def options_name_dialog() -> str:
         )
         .execute()
         .strip()
+        .lower()
         .replace(" ", "-")
     )
 
